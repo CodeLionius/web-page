@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Žaibo Atstumo Skaičiuoklė</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    .lightning-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 10 L30 25 L25 25 L35 45 L30 45 L40 65 L25 35 L30 35 L20 10" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/></svg>') repeat;
+      pointer-events: none;
+      animation: float 20s infinite linear;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-100px); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 650px; /* Pakeistas plotis vienai kortelei */
+      margin: 0 auto;
+      padding: 20px;
+      display: flex; /* Pakeista is grid */
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding-top: 50px;
+      padding-bottom: 50px;
+    }
+
+    .calculator-card {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      animation: slideIn 0.8s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(50px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    h1 {
+      color: #2d3748;
+      font-size: 2.2em;
+      margin-bottom: 10px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .lightning-icon {
+      font-size: 1.2em;
+      animation: flash 2s infinite;
+    }
+
+    @keyframes flash {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0.3; }
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #718096;
+      margin-bottom: 30px;
+      font-size: 1.1em;
+    }
+
+    .input-group {
+      margin-bottom: 25px;
+    }
+
+    .input-group label {
+      display: block;
+      color: #4a5568;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 0.95em;
+    }
+
+    .input-container {
+      position: relative;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 15px 20px;
+      font-size: 1.1em;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      background: white;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    input[type="number"]:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .unit {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #a0aec0;
+      font-weight: 500;
+      pointer-events: none;
+    }
+
+    .calculate-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 18px;
+      font-size: 1.2em;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 15px; /* Tarpas mygtukams */
+    }
+
+    .calculate-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .calculate-btn:active {
+      transform: translateY(-1px);
+    }
+    
+    /* NAUJAS PAGALBOS MYGTUKAS */
+    .help-btn {
+      width: 100%;
+      background: transparent;
+      color: #667eea;
+      padding: 15px;
+      font-size: 1.1em;
+      font-weight: 600;
+      border: 2px solid #667eea;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .help-btn:hover {
+      background: rgba(102, 126, 234, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .result-section {
+      margin-top: 30px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s ease;
+      max-height: 0;
+      overflow: hidden;
+    }
+
+    .result-section.show {
+      opacity: 1;
+      transform: translateY(0);
+      max-height: 1000px; /* Allow content to expand */
+    }
+
+    .result-card {
+      background: linear-gradient(135deg, #f7fafc, #edf2f7);
+      padding: 25px;
+      border-radius: 12px;
+      border-left: 4px solid #667eea;
+      margin-bottom: 20px;
+    }
+
+    .result-main {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 10px;
+    }
+
+    .result-details {
+      color: #718096;
+      font-size: 1em;
+      line-height: 1.6;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-top: 25px;
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .history-section {
+      margin-top: 30px;
+      margin-bottom: 30px; /* Tarpas iki Pagalbos mygtuko */
+    }
+
+    .history-title {
+      color: #4a5568;
+      font-weight: 600;
+      margin-bottom: 15px;
+      font-size: 1.1em;
+    }
+
+    .history-list {
+      max-height: 200px;
+      overflow-y: auto;
+      background: #f7fafc;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .history-item {
+      background: white;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .clear-btn {
+      background: #e53e3e;
+      color: white;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85em;
+      margin-top: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .clear-btn:hover {
+      background: #c53030;
+    }
+
+    .info-section {
+      margin-bottom: 30px;
+    }
+    
+    .info-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-title {
+      color: #2d3748;
+      font-size: 1.4em;
+      font-weight: 600;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-content {
+      color: #4a5568;
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .formula {
+      background: linear-gradient(135deg, #edf2f7, #e2e8f0);
+      padding: 20px;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      font-size: 1.1em;
+      color: #2d3748;
+      border-left: 4px solid #667eea;
+    }
+
+    .tips {
+      background: linear-gradient(135deg, #fff5d6, #fed7aa);
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    .tips-title {
+      color: #9c4221;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .tips ul {
+      color: #7c2d12;
+      padding-left: 20px;
+    }
+
+    .tips li {
+      margin-bottom: 8px;
+    }
+
+    .weather-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 25px;
+    }
+
+    .weather-card {
+      background: linear-gradient(135deg, #e6fffa, #b2f5ea);
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .weather-title {
+      font-weight: 600;
+      color: #234e52;
+      margin-bottom: 5px;
+      font-size: 0.9em;
+    }
+
+    .weather-value {
+      font-size: 1.2em;
+      color: #1a202c;
+      font-weight: 700;
+    }
+
+    .error {
+      background: #fed7d7;
+      color: #9b2c2c;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      border-left: 4px solid #e53e3e;
+    }
+
+    /* NAUJI MODALINIO LANGO STILIAI */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(5px);
+      display: none; /* Initially hidden */
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.show {
+        display: flex;
+        opacity: 1;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      max-width: 700px;
+      width: 100%;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.show .modal-content {
+      transform: scale(1);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 2.5em;
+      color: #a0aec0;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.3s ease;
+    }
+
+    .close-btn:hover {
+      color: #2d3748;
+    }
+    
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.8em;
+      }
+      
+      .weather-info {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-content {
+        padding: 25px;
+      }
+    }
+
+    .loader {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #ffffff;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="lightning-bg"></div>
+  
+  <div class="container">
+    <div class="calculator-card">
+      <h1><span class="lightning-icon">⚡</span>Žaibo Atstumo Skaičiuoklė</h1>
+      <p class="subtitle">Apskaičiuokite atstumą iki žaibo židinio</p>
+      
+      <div class="input-group">
+        <label for="timeInput">Laikas tarp blyksnio ir griaustinio</label>
+        <div class="input-container">
+          <input type="number" id="timeInput" placeholder="pvz.: 3" min="0" step="0.1" />
+          <span class="unit">sek</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="tempInput">Esama oro temperatūra</label>
+        <div class="input-container">
+          <input type="number" id="tempInput" placeholder="pvz.: 20" step="0.1" />
+          <span class="unit">°C</span>
+        </div>
+      </div>
+
+      <button class="calculate-btn" onclick="calculateDistance()">
+        <div class="loader"></div>
+        <span class="btn-text">Skaičiuoti atstumą</span>
+      </button>
+
+      <div class="result-section" id="resultSection">
+        <div class="result-card">
+          <div class="result-main" id="mainResult"></div>
+          <div class="result-details" id="detailsResult"></div>
+        </div>
+        
+        <div class="weather-info">
+          <div class="weather-card">
+            <div class="weather-title">Garso greitis</div>
+            <div class="weather-value" id="soundSpeed">-- m/s</div>
+          </div>
+          <div class="weather-card">
+            <div class="weather-title">Pavojingumo lygis</div>
+            <div class="weather-value" id="dangerLevel">--</div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="distanceChart"></canvas>
+        </div>
+      </div>
+
+      <div class="history-section">
+        <div class="history-title">📊 Skaičiavimų istorija</div>
+        <div class="history-list" id="historyList">
+          <p style="text-align: center; color: #a0aec0; padding: 20px;">Čia bus rodoma atliktų skaičiavimų istorija</p>
+        </div>
+        <button class="clear-btn" onclick="clearHistory()" style="display: none;" id="clearBtn">Išvalyti istoriją</button>
+      </div>
+      
+      <!-- NAUJAS PAGALBOS MYGTUKAS -->
+      <button class="help-btn" onclick="openHelpModal()">Pagalba</button>
+
+    </div>
+  </div>
+
+  <!-- NAUJAS MODALINIS LANGAS SU PAGALBOS INFORMACIJA -->
+  <div id="helpModal" class="modal-overlay">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeHelpModal()">×</span>
+      
+      <div class="info-section">
+        <h2 class="info-title">🔬 Kaip tai veikia?</h2>
+        <div class="info-content">
+          Žaibo atstumas apskaičiuojamas naudojant garso sklidimo greitį ore. Šviesa keliauja beveik akimirksniu, 
+          tačiau garsas sklinda 343 m/s greičiu (20°C temperatūroje). Šis greitis keičiasi priklausomai nuo temperatūros.
+        </div>
+        
+        <div class="formula">
+          <strong>Formulė:</strong><br>
+          Garso greitis = 331 + (0.6 × temperatūra)<br>
+          Atstumas = Laikas × Garso greitis
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h2 class="info-title">⚠️ Saugumas</h2>
+        <div class="tips">
+          <div class="tips-title">Svarbu žinoti:</div>
+          <ul>
+            <li><strong>< 1 km:</strong> Ypač pavojinga! Ieškokite priedangos</li>
+            <li><strong>1-5 km:</strong> Pavojinga zona, laikykitės viduje</li>
+            <li><strong>5-10 km:</strong> Vidutinis pavojus, stebėkite situaciją</li>
+            <li><strong>> 10 km:</strong> Santykinai saugu, bet būkite atsargūs</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h2 class="info-title">🌡️ Temperatūros poveikis</h2>
+        <div class="info-content">
+          Garso greitis ore priklauso nuo temperatūros. Šiltesniame ore garsas sklinda greičiau:
+        </div>
+        <ul style="color: #4a5568; padding-left: 20px; line-height: 1.6;">
+          <li><strong>0°C:</strong> 331 m/s</li>
+          <li><strong>20°C:</strong> 343 m/s</li>
+          <li><strong>30°C:</strong> 349 m/s</li>
+        </ul>
+      </div>
+
+      <div class="info-section">
+        <h2 class="info-title">💡 Patarimai</h2>
+        <div class="info-content">
+          <ul style="color: #4a5568; padding-left: 20px; line-height: 1.8;">
+            <li>Skaičiuokite sekundes nuo blyksnio momento iki griaustinio garsо</li>
+            <li>Jei nežinote tikslios temperatūros, naudokite <b>20°C</b></li>
+            <li>Stebėkite kelis žaibus - atstumas gali keistis</li>
+            <li>Prisiminkite <b>30-30 taisyklę</b> - jei laikas tarp žaibo ir griaustinio iki <b>30</b> sekundžių, nedelsdami ieškokite pastogės. 
+              Pasibaigus audrai, palaukite bent <b>30</b> minučių po paskutinio griaustinio garso, prieš grįždami į lauką. Net jei atrodo, kad audra tolsta, žaibas gali trenkti iki 15 km nuo perkūnijos debesų – net ir tada, kai dangus virš jūsų atrodo giedras. Todėl ši taisyklė padeda išvengti pavojingų situacijų</li>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    let chart = null;
+    let calculationHistory = [];
+
+    // NAUJA: Modalino lango elementas
+    const helpModal = document.getElementById('helpModal');
+
+    function calculateDistance() {
+      const timeInput = document.getElementById('timeInput');
+      const tempInput = document.getElementById('tempInput');
+      const time = parseFloat(timeInput.value);
+      const temperature = parseFloat(tempInput.value) || 20; // Default to 20°C
+      
+      showLoading(true);
+      
+      setTimeout(() => {
+        showLoading(false);
+        
+        if (isNaN(time) || time < 0) {
+          showError('Įveskite teisingą laiką (sekundėmis)!');
+          return;
+        }
+
+        const soundSpeed = 331 + (0.6 * temperature);
+        const distance = (time * soundSpeed) / 1000; // Convert to km
+        const dangerLevel = getDangerLevel(distance);
+        
+        showResults(time, temperature, soundSpeed, distance, dangerLevel);
+        addToHistory(time, temperature, distance, dangerLevel);
+        updateChart(time, distance, soundSpeed);
+        
+      }, 800);
+    }
+
+    function showLoading(show) {
+      const loader = document.querySelector('.loader');
+      const btnText = document.querySelector('.btn-text');
+      const btn = document.querySelector('.calculate-btn');
+      
+      if (show) {
+        loader.style.display = 'block';
+        btnText.textContent = 'Skaičiuojama...';
+        btn.style.pointerEvents = 'none';
+      } else {
+        loader.style.display = 'none';
+        btnText.textContent = 'Skaičiuoti atstumą';
+        btn.style.pointerEvents = 'auto';
+      }
+    }
+
+    function showResults(time, temperature, soundSpeed, distance, dangerLevel) {
+      const resultSection = document.getElementById('resultSection');
+      const mainResult = document.getElementById('mainResult');
+      const detailsResult = document.getElementById('detailsResult');
+      const soundSpeedEl = document.getElementById('soundSpeed');
+      const dangerLevelEl = document.getElementById('dangerLevel');
+
+      mainResult.textContent = `${distance.toFixed(2)} km`;
+      detailsResult.innerHTML = `
+        Žaibas nutiko <strong>${distance.toFixed(2)} km</strong> atstumu nuo jūsų.<br>
+        Skaičiavimas pagrįstas <strong>${temperature}°C</strong> temperatūra ir <strong>${time}s</strong> laiku.
+      `;
+      
+      soundSpeedEl.textContent = `${soundSpeed.toFixed(1)} m/s`;
+      dangerLevelEl.textContent = dangerLevel.text;
+      dangerLevelEl.style.color = dangerLevel.color;
+
+      resultSection.classList.add('show');
+      
+      const existingError = document.querySelector('.error');
+      if (existingError) {
+        existingError.remove();
+      }
+    }
+
+    function showError(message) {
+      const existingError = document.querySelector('.error');
+      if (existingError) {
+        existingError.remove();
+      }
+
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error';
+      errorDiv.textContent = message;
+      
+      const calculateBtn = document.querySelector('.calculate-btn');
+      calculateBtn.parentNode.insertBefore(errorDiv, calculateBtn.nextSibling);
+      
+      document.getElementById('resultSection').classList.remove('show');
+    }
+
+    function getDangerLevel(distance) {
+      if (distance < 1) {
+        return { text: 'YPAČ AUKŠTAS', color: '#e53e3e' };
+      } else if (distance < 5) {
+        return { text: 'AUKŠTAS', color: '#dd6b20' };
+      } else if (distance < 10) {
+        return { text: 'VIDUTINIS', color: '#d69e2e' };
+      } else {
+        return { text: 'ŽEMAS', color: '#38a169' };
+      }
+    }
+
+    function updateChart(time, distance, soundSpeed) {
+      const ctx = document.getElementById('distanceChart').getContext('2d');
+      
+      if (chart) {
+        chart.destroy();
+      }
+
+      chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Praėjęs laikas (s)', 'Apskaičiuotas atstumas (km)'],
+          datasets: [{
+            data: [time, distance],
+            backgroundColor: [
+              'rgba(102, 126, 234, 0.8)',
+              'rgba(118, 75, 162, 0.8)'
+            ],
+            borderWidth: 0,
+            cutout: '60%'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                padding: 20,
+                font: {
+                  size: 12
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function addToHistory(time, temperature, distance, dangerLevel) {
+      const timestamp = new Date().toLocaleString('lt-LT');
+      const entry = { time, temperature, distance, dangerLevel, timestamp };
+      
+      calculationHistory.unshift(entry);
+      
+      if (calculationHistory.length > 10) {
+        calculationHistory = calculationHistory.slice(0, 10);
+      }
+      
+      updateHistoryDisplay();
+    }
+
+    function updateHistoryDisplay() {
+      const historyList = document.getElementById('historyList');
+      const clearBtn = document.getElementById('clearBtn');
+      
+      if (calculationHistory.length === 0) {
+        historyList.innerHTML = '<p style="text-align: center; color: #a0aec0; padding: 20px;">Skaičiavimų istorija bus rodoma čia</p>';
+        clearBtn.style.display = 'none';
+        return;
+      }
+      
+      historyList.innerHTML = calculationHistory.map(entry => `
+        <div class="history-item">
+          <div>
+            <strong>${entry.distance.toFixed(2)} km</strong> - ${entry.dangerLevel.text}<br>
+            <small>${entry.time}s, ${entry.temperature}°C</small>
+          </div>
+          <small>${entry.timestamp}</small>
+        </div>
+      `).join('');
+      
+      clearBtn.style.display = 'block';
+    }
+
+    function clearHistory() {
+      calculationHistory = [];
+      updateHistoryDisplay();
+    }
+
+    // NAUJOS FUNKCIJOS MODALINIAM LANGUI
+    function openHelpModal() {
+        helpModal.classList.add('show');
+        document.body.classList.add('modal-open');
+    }
+
+    function closeHelpModal() {
+        helpModal.classList.remove('show');
+        document.body.classList.remove('modal-open');
+    }
+    
+    // Uždaryti langą paspaudus ant fono
+    helpModal.addEventListener('click', function(e) {
+        if (e.target === helpModal) {
+            closeHelpModal();
+        }
+    });
+
+    document.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        // Vykdyti skaičiavimą, tik jei modalinis langas nėra aktyvus
+        if (!helpModal.classList.contains('show')) {
+            calculateDistance();
+        }
+      }
+    });
+    
+    // Uždaryti langą su Escape mygtuku
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && helpModal.classList.contains('show')) {
+            closeHelpModal();
+        }
+    });
+
+    document.getElementById('timeInput').focus();
+  </script>
+</body>
+</html>
