@@ -3,445 +3,132 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Žaibo Atstumo Skaičiuoklė</title>
+  <title>Žaibo Atstumo Skaičiuoklė su Lokacija</title>
+  
+  <!-- Leaflet.js bibliotekos stiliai žemėlapiui -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       overflow-x: hidden;
     }
-
-    body.modal-open {
-      overflow: hidden;
-    }
-
+    body.modal-open { overflow: hidden; }
     .lightning-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 10 L30 25 L25 25 L35 45 L30 45 L40 65 L25 35 L30 35 L20 10" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/></svg>') repeat;
-      pointer-events: none;
-      animation: float 20s infinite linear;
+      pointer-events: none; animation: float 20s infinite linear;
     }
-
-    @keyframes float {
-      0% { transform: translateY(0px); }
-      100% { transform: translateY(-100px); }
-    }
-
+    @keyframes float { 0% { transform: translateY(0px); } 100% { transform: translateY(-100px); } }
     .container {
-      position: relative;
-      z-index: 1;
-      max-width: 650px;
-      margin: 0 auto;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      padding-top: 50px;
-      padding-bottom: 50px;
+      position: relative; z-index: 1; max-width: 650px; margin: 0 auto; padding: 20px;
+      display: flex; justify-content: center; align-items: flex-start;
+      min-height: 100vh; padding-top: 50px; padding-bottom: 50px;
     }
-
     .calculator-card {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      animation: slideIn 0.8s ease-out;
+      width: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+      border-radius: 20px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255,255,255,0.2); animation: slideIn 0.8s ease-out;
     }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(50px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
+    @keyframes slideIn { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
     h1 {
-      color: #2d3748;
-      font-size: 2.2em;
-      margin-bottom: 10px;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
+      color: #2d3748; font-size: 2.2em; margin-bottom: 10px; text-align: center;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
     }
-
-    .lightning-icon {
-      font-size: 1.2em;
-      animation: flash 2s infinite;
+    .lightning-icon { font-size: 1.2em; animation: flash 2s infinite; }
+    @keyframes flash { 0%, 50%, 100% { opacity: 1; } 25%, 75% { opacity: 0.3; } }
+    .subtitle { text-align: center; color: #718096; margin-bottom: 30px; font-size: 1.1em; }
+    .input-group { margin-bottom: 25px; }
+    .input-group label { display: block; color: #4a5568; font-weight: 600; margin-bottom: 8px; font-size: 0.95em; }
+    .input-container { position: relative; }
+    input[type="number"] {
+      width: 100%; padding: 15px 20px; font-size: 1.1em; border: 2px solid #e2e8f0;
+      border-radius: 12px; background: white; transition: all 0.3s ease; outline: none;
     }
-
-    @keyframes flash {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0.3; }
+    input[type="number"]:focus {
+      border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); transform: translateY(-2px);
     }
-
-    .subtitle {
-      text-align: center;
-      color: #718096;
-      margin-bottom: 30px;
-      font-size: 1.1em;
-    }
-
-    .input-group {
+    .unit { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #a0aec0; font-weight: 500; pointer-events: none; }
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
       margin-bottom: 25px;
     }
-
-    .input-group label {
-      display: block;
-      color: #4a5568;
-      font-weight: 600;
-      margin-bottom: 8px;
-      font-size: 0.95em;
+    .calculate-btn, .location-btn {
+      width: 100%; color: white; padding: 18px; font-size: 1.2em; font-weight: 600; border: none;
+      border-radius: 12px; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden;
+      display: flex; justify-content: center; align-items: center; gap: 10px;
     }
-
-    .input-container {
-      position: relative;
+    .calculate-btn { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .calculate-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3); }
+    .calculate-btn:active { transform: translateY(-1px); }
+    
+    .location-btn { background: linear-gradient(135deg, #38a169, #2f855a); }
+    .location-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(56, 161, 105, 0.3); }
+    .location-btn.loading, .location-btn.success {
+      cursor: default; box-shadow: none; transform: none;
     }
-
-    input[type="number"] {
-      width: 100%;
-      padding: 15px 20px;
-      font-size: 1.1em;
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      background: white;
-      transition: all 0.3s ease;
-      outline: none;
-    }
-
-    input[type="number"]:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-      transform: translateY(-2px);
-    }
-
-    .unit {
-      position: absolute;
-      right: 15px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #a0aec0;
-      font-weight: 500;
-      pointer-events: none;
-    }
-
-    .calculate-btn {
-      width: 100%;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      padding: 18px;
-      font-size: 1.2em;
-      font-weight: 600;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-      margin-bottom: 15px;
-    }
-
-    .calculate-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-    }
-
-    .calculate-btn:active {
-      transform: translateY(-1px);
-    }
+    .location-btn.success { background: linear-gradient(135deg, #48bb78, #38a169); }
     
     .help-btn {
-      width: 100%;
-      background: transparent;
-      color: #667eea;
-      padding: 15px;
-      font-size: 1.1em;
-      font-weight: 600;
-      border: 2px solid #667eea;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s ease;
+      width: 100%; background: transparent; color: #667eea; padding: 15px; font-size: 1.1em;
+      font-weight: 600; border: 2px solid #667eea; border-radius: 12px; cursor: pointer; transition: all 0.3s ease;
+      margin-top: 15px; /* Pridėtas tarpas */
     }
-
-    .help-btn:hover {
-      background: rgba(102, 126, 234, 0.1);
-      transform: translateY(-2px);
-    }
-
-    .result-section {
-      margin-top: 30px;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.5s ease;
-      max-height: 0;
-      overflow: hidden;
-    }
-
-    .result-section.show {
-      opacity: 1;
-      transform: translateY(0);
-      max-height: 1000px;
-    }
-
-    .result-card {
-      background: linear-gradient(135deg, #f7fafc, #edf2f7);
-      padding: 25px;
-      border-radius: 12px;
-      border-left: 4px solid #667eea;
-      margin-bottom: 20px;
-    }
-
-    .result-main {
-      font-size: 1.8em;
-      font-weight: 700;
-      color: #2d3748;
-      margin-bottom: 10px;
-    }
-
-    .result-details {
-      color: #718096;
-      font-size: 1em;
-      line-height: 1.6;
-    }
-
-    .history-section {
-      margin-top: 30px;
-      margin-bottom: 30px;
-    }
-
-    .history-title {
-      color: #4a5568;
-      font-weight: 600;
-      margin-bottom: 15px;
-      font-size: 1.1em;
-    }
-
-    .history-list {
-      max-height: 200px;
-      overflow-y: auto;
-      background: #f7fafc;
-      border-radius: 8px;
-      padding: 10px;
-    }
-
-    .history-item {
-      background: white;
-      padding: 12px;
-      margin-bottom: 8px;
-      border-radius: 6px;
-      font-size: 0.9em;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .clear-btn {
-      background: #e53e3e;
-      color: white;
-      padding: 8px 15px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85em;
-      margin-top: 10px;
-      transition: all 0.3s ease;
-    }
-
-    .clear-btn:hover {
-      background: #c53030;
-    }
-
-    .info-section {
-      margin-bottom: 30px;
-    }
-    
-    .info-section:last-child {
-      margin-bottom: 0;
-    }
-
-    .info-title {
-      color: #2d3748;
-      font-size: 1.4em;
-      font-weight: 600;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .info-content {
-      color: #4a5568;
-      line-height: 1.7;
-      margin-bottom: 20px;
-    }
-
-    .formula {
-      background: linear-gradient(135deg, #edf2f7, #e2e8f0);
-      padding: 20px;
-      border-radius: 10px;
-      font-family: 'Courier New', monospace;
-      text-align: center;
-      font-size: 1.1em;
-      color: #2d3748;
-      border-left: 4px solid #667eea;
-    }
-
-    .tips {
-      background: linear-gradient(135deg, #fff5d6, #fed7aa);
-      padding: 20px;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
-
-    .tips-title {
-      color: #9c4221;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-
-    .tips ul {
-      color: #7c2d12;
-      padding-left: 20px;
-    }
-
-    .tips li {
-      margin-bottom: 8px;
-    }
-
-    .weather-info {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-top: 25px;
-    }
-
-    .weather-card {
-      background: linear-gradient(135deg, #e6fffa, #b2f5ea);
-      padding: 15px;
-      border-radius: 8px;
-      text-align: center;
-    }
-
-    .weather-title {
-      font-weight: 600;
-      color: #234e52;
-      margin-bottom: 5px;
-      font-size: 0.9em;
-    }
-
-    .weather-value {
-      font-size: 1.2em;
-      color: #1a202c;
-      font-weight: 700;
-    }
-
-    .error {
-      background: #fed7d7;
-      color: #9b2c2c;
-      padding: 15px;
-      border-radius: 8px;
-      margin-top: 15px;
-      border-left: 4px solid #e53e3e;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(5px);
+    .help-btn:hover { background: rgba(102, 126, 234, 0.1); transform: translateY(-2px); }
+    .result-section { margin-top: 30px; opacity: 0; transform: translateY(20px); transition: all 0.5s ease; max-height: 0; overflow: hidden; }
+    .result-section.show { opacity: 1; transform: translateY(0); max-height: 1500px; }
+    .result-card { background: linear-gradient(135deg, #f7fafc, #edf2f7); padding: 25px; border-radius: 12px; border-left: 4px solid #667eea; margin-bottom: 20px; }
+    .result-main { font-size: 1.8em; font-weight: 700; color: #2d3748; margin-bottom: 10px; }
+    .result-details { color: #718096; font-size: 1em; line-height: 1.6; }
+    .history-section { margin-top: 30px; margin-bottom: 30px; }
+    .history-title { color: #4a5568; font-weight: 600; margin-bottom: 15px; font-size: 1.1em; }
+    .history-list { max-height: 200px; overflow-y: auto; background: #f7fafc; border-radius: 8px; padding: 10px; }
+    .history-item { background: white; padding: 12px; margin-bottom: 8px; border-radius: 6px; font-size: 0.9em; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+    .clear-btn { background: #e53e3e; color: white; padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; margin-top: 10px; transition: all 0.3s ease; }
+    .clear-btn:hover { background: #c53030; }
+    .weather-info { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+    .weather-card { background: linear-gradient(135deg, #e6fffa, #b2f5ea); padding: 15px; border-radius: 8px; text-align: center; }
+    .weather-title { font-weight: 600; color: #234e52; margin-bottom: 5px; font-size: 0.9em; }
+    .weather-value { font-size: 1.2em; color: #1a202c; font-weight: 700; }
+    .error { background: #fed7d7; color: #9b2c2c; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #e53e3e; }
+    .map-container {
+      height: 350px; border-radius: 12px; margin-top: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 1; background: #e2e8f0;
       display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      padding: 20px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
     }
+    .map-container.show { display: block; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; opacity: 0; transition: opacity 0.3s ease; }
+    .modal-overlay.show { display: flex; opacity: 1; }
+    .modal-content { background: white; border-radius: 20px; padding: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-width: 700px; width: 100%; position: relative; max-height: 90vh; overflow-y: auto; transform: scale(0.9); transition: transform 0.3s ease; }
+    .modal-overlay.show .modal-content { transform: scale(1); }
+    .close-btn { position: absolute; top: 15px; right: 20px; font-size: 2.5em; color: #a0aec0; cursor: pointer; line-height: 1; transition: color 0.3s ease; }
+    .close-btn:hover { color: #2d3748; }
+    .info-section { margin-bottom: 30px; }
+    .info-section:last-child { margin-bottom: 0; }
+    .info-title { color: #2d3748; font-size: 1.4em; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    .info-content { color: #4a5568; line-height: 1.7; margin-bottom: 20px; }
+    .formula { background: linear-gradient(135deg, #edf2f7, #e2e8f0); padding: 20px; border-radius: 10px; font-family: 'Courier New', monospace; text-align: center; font-size: 1.1em; color: #2d3748; border-left: 4px solid #667eea; }
+    .tips { background: linear-gradient(135deg, #fff5d6, #fed7aa); padding: 20px; border-radius: 10px; margin-top: 20px; }
+    .tips-title { color: #9c4221; font-weight: 600; margin-bottom: 10px; }
+    .tips ul { color: #7c2d12; padding-left: 20px; }
+    .tips li { margin-bottom: 8px; }
+    .loader { display: none; width: 20px; height: 20px; border: 2px solid #ffffff; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    .modal-overlay.show {
-        display: flex;
-        opacity: 1;
-    }
-    
-    .modal-content {
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      max-width: 700px;
-      width: 100%;
-      position: relative;
-      max-height: 90vh;
-      overflow-y: auto;
-      transform: scale(0.9);
-      transition: transform 0.3s ease;
-    }
-
-    .modal-overlay.show .modal-content {
-      transform: scale(1);
-    }
-
-    .close-btn {
-      position: absolute;
-      top: 15px;
-      right: 20px;
-      font-size: 2.5em;
-      color: #a0aec0;
-      cursor: pointer;
-      line-height: 1;
-      transition: color 0.3s ease;
-    }
-
-    .close-btn:hover {
-      color: #2d3748;
-    }
-    
     @media (max-width: 768px) {
-      h1 {
-        font-size: 1.8em;
-      }
-      
-      .weather-info {
-        grid-template-columns: 1fr;
-      }
-
-      .modal-content {
-        padding: 25px;
-      }
-    }
-
-    .loader {
-      display: none;
-      width: 20px;
-      height: 20px;
-      border: 2px solid #ffffff;
-      border-top: 2px solid transparent;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      h1 { font-size: 1.8em; }
+      .weather-info { grid-template-columns: 1fr; }
+      .modal-content { padding: 25px; }
+      .button-group { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -451,7 +138,7 @@
   <div class="container">
     <div class="calculator-card">
       <h1><span class="lightning-icon">⚡</span>Žaibo Atstumo Skaičiuoklė</h1>
-      <p class="subtitle">Apskaičiuokite atstumą iki žaibo židinio</p>
+      <p class="subtitle">Apskaičiuokite atstumą ir pamatykite galimą vietą žemėlapyje</p>
       
       <div class="input-group">
         <label for="timeInput">Laikas tarp blyksnio ir griaustinio</label>
@@ -468,11 +155,19 @@
           <span class="unit">°C</span>
         </div>
       </div>
-
-      <button class="calculate-btn" onclick="calculateDistance()">
-        <div class="loader"></div>
-        <span class="btn-text">Skaičiuoti atstumą</span>
-      </button>
+      
+      <div class="button-group">
+        <button id="locationBtn" class="location-btn" onclick="getLocation()">
+          <div class="loader" id="locationLoader"></div>
+          <span class="btn-text" id="locationBtnText">📍 Nustatyti mano lokaciją</span>
+        </button>
+        <button class="calculate-btn" onclick="calculateDistance()">
+          <div class="loader" id="calculateLoader"></div>
+          <span class="btn-text" id="calculateBtnText">Skaičiuoti atstumą</span>
+        </button>
+      </div>
+      
+      <div id="locationError" class="error" style="display: none;"></div>
 
       <div class="result-section" id="resultSection">
         <div class="result-card">
@@ -490,6 +185,8 @@
             <div class="weather-value" id="dangerLevel">--</div>
           </div>
         </div>
+        
+        <div id="map" class="map-container"></div>
       </div>
 
       <div class="history-section">
@@ -501,28 +198,24 @@
       </div>
       
       <button class="help-btn" onclick="openHelpModal()">Pagalba</button>
-
     </div>
   </div>
 
   <div id="helpModal" class="modal-overlay">
     <div class="modal-content">
       <span class="close-btn" onclick="closeHelpModal()">×</span>
-      
       <div class="info-section">
         <h2 class="info-title">🔬 Kaip tai veikia?</h2>
         <div class="info-content">
           Žaibo atstumas apskaičiuojamas naudojant garso sklidimo greitį ore. Šviesa keliauja beveik akimirksniu, 
-          tačiau garsas sklinda 343 m/s greičiu (20°C temperatūroje). Šis greitis keičiasi priklausomai nuo temperatūros.
+          tačiau garsas sklinda 343 m/s greičiu (20°C temperatūroje). Šis greitis keičiasi priklausomai nuo temperatūros. 
         </div>
-        
         <div class="formula">
           <strong>Formulė:</strong><br>
           Garso greitis = 331 + (0.6 × temperatūra)<br>
           Atstumas = Laikas × Garso greitis
         </div>
       </div>
-
       <div class="info-section">
         <h2 class="info-title">⚠️ Saugumas</h2>
         <div class="tips">
@@ -535,7 +228,6 @@
           </ul>
         </div>
       </div>
-
       <div class="info-section">
         <h2 class="info-title">🌡️ Temperatūros poveikis</h2>
         <div class="info-content">
@@ -547,7 +239,6 @@
           <li><strong>30°C:</strong> 349 m/s</li>
         </ul>
       </div>
-
       <div class="info-section">
         <h2 class="info-title">💡 Patarimai</h2>
         <div class="info-content">
@@ -557,14 +248,80 @@
             <li>Stebėkite kelis žaibus - atstumas gali keistis</li>
             <li>Prisiminkite <b>30-30 taisyklę</b> - jei laikas tarp žaibo ir griaustinio iki <b>30</b> sekundžių, nedelsdami ieškokite pastogės. 
               Pasibaigus audrai, palaukite bent <b>30</b> minučių po paskutinio griaustinio garso, prieš grįždami į lauką. Net jei atrodo, kad audra tolsta, žaibas gali trenkti iki 15 km nuo perkūnijos debesų – net ir tada, kai dangus virš jūsų atrodo giedras. Todėl ši taisyklė padeda išvengti pavojingų situacijų</li>
+          </ul>
         </div>
       </div>
     </div>
   </div>
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
   <script>
     let calculationHistory = [];
+    let userLocation = null;
+    let map = null;
+    let userMarker = null;
+    let lightningCircle = null;
 
     const helpModal = document.getElementById('helpModal');
+
+    function getLocation() {
+        if (!navigator.geolocation) {
+            showLocationError('Jūsų naršyklė nepalaiko geografinės vietos nustatymo funkcijos.');
+            return;
+        }
+
+        const locationBtn = document.getElementById('locationBtn');
+        const locationLoader = document.getElementById('locationLoader');
+        const locationBtnText = document.getElementById('locationBtnText');
+
+        locationBtn.classList.add('loading');
+        locationLoader.style.display = 'block';
+        locationBtnText.textContent = 'Ieškoma...';
+        locationBtn.disabled = true;
+        hideLocationError();
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                
+                locationBtn.classList.remove('loading');
+                locationBtn.classList.add('success');
+                locationLoader.style.display = 'none';
+                locationBtnText.innerHTML = `✓ Lokacija nustatyta`;
+                setTimeout(() => { locationBtn.disabled = false; }, 1000);
+            },
+            (error) => {
+                locationBtn.classList.remove('loading');
+                locationLoader.style.display = 'none';
+                locationBtnText.textContent = '📍 Nustatyti mano lokaciją';
+                locationBtn.disabled = false;
+                userLocation = null;
+                
+                let message = 'Nepavyko nustatyti jūsų buvimo vietos. ';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED: message += "Leidimas nebuvo suteiktas."; break;
+                    case error.POSITION_UNAVAILABLE: message += "Informacija apie vietą yra nepasiekiama."; break;
+                    case error.TIMEOUT: message += "Operacija užtruko per ilgai."; break;
+                    default: message += "Įvyko nežinoma klaida."; break;
+                }
+                showLocationError(message);
+            }
+        );
+    }
+
+    function showLocationError(message) {
+        const errorDiv = document.getElementById('locationError');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+
+    function hideLocationError() {
+        document.getElementById('locationError').style.display = 'none';
+    }
 
     function calculateDistance() {
       const timeInput = document.getElementById('timeInput');
@@ -579,6 +336,7 @@
         
         if (isNaN(time) || time < 0) {
           showError('Įveskite teisingą laiką (sekundėmis)!');
+          document.getElementById('map').classList.remove('show');
           return;
         }
 
@@ -589,22 +347,60 @@
         showResults(time, temperature, soundSpeed, distance, dangerLevel);
         addToHistory(time, temperature, distance, dangerLevel);
         
+        if (userLocation) {
+            displayMap(userLocation, distance);
+        } else {
+            document.getElementById('map').classList.remove('show');
+        }
+
       }, 800);
     }
 
+    function displayMap(location, distanceKm) {
+        const mapContainer = document.getElementById('map');
+        mapContainer.classList.add('show');
+        const distanceMeters = distanceKm * 1000;
+
+        if (!map) {
+            map = L.map('map').setView([location.lat, location.lng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        }
+        
+        if (userMarker) map.removeLayer(userMarker);
+        if (lightningCircle) map.removeLayer(lightningCircle);
+        
+        userMarker = L.marker([location.lat, location.lng]).addTo(map)
+            .bindPopup('<b>Jūsų buvimo vieta</b>')
+            .openPopup();
+        
+        lightningCircle = L.circle([location.lat, location.lng], {
+            color: '#e53e3e',
+            fillColor: '#fed7d7',
+            fillOpacity: 0.4,
+            radius: distanceMeters
+        }).addTo(map).bindPopup(`Galima žaibo zona<br>(${distanceKm.toFixed(2)} km spinduliu)`);
+
+        map.fitBounds(lightningCircle.getBounds());
+        
+        // Atnaujinti žemėlapio dydį po to kai jis tampa matomas, kad išvengti plytelių problemų
+        setTimeout(() => { map.invalidateSize() }, 100);
+    }
+
     function showLoading(show) {
-      const loader = document.querySelector('.loader');
-      const btnText = document.querySelector('.btn-text');
+      const loader = document.getElementById('calculateLoader');
+      const btnText = document.getElementById('calculateBtnText');
       const btn = document.querySelector('.calculate-btn');
       
       if (show) {
         loader.style.display = 'block';
         btnText.textContent = 'Skaičiuojama...';
-        btn.style.pointerEvents = 'none';
+        btn.disabled = true;
       } else {
         loader.style.display = 'none';
         btnText.textContent = 'Skaičiuoti atstumą';
-        btn.style.pointerEvents = 'auto';
+        btn.disabled = false;
       }
     }
 
@@ -627,14 +423,14 @@
 
       resultSection.classList.add('show');
       
-      const existingError = document.querySelector('.error');
+      const existingError = document.querySelector('.error:not(#locationError)');
       if (existingError) {
         existingError.remove();
       }
     }
 
     function showError(message) {
-      const existingError = document.querySelector('.error');
+      const existingError = document.querySelector('.error:not(#locationError)');
       if (existingError) {
         existingError.remove();
       }
@@ -643,22 +439,17 @@
       errorDiv.className = 'error';
       errorDiv.textContent = message;
       
-      const calculateBtn = document.querySelector('.calculate-btn');
-      calculateBtn.parentNode.insertBefore(errorDiv, calculateBtn.nextSibling);
+      const buttonGroup = document.querySelector('.button-group');
+      buttonGroup.parentNode.insertBefore(errorDiv, buttonGroup.nextSibling);
       
       document.getElementById('resultSection').classList.remove('show');
     }
 
     function getDangerLevel(distance) {
-      if (distance < 1) {
-        return { text: 'YPAČ AUKŠTAS', color: '#e53e3e' };
-      } else if (distance < 5) {
-        return { text: 'AUKŠTAS', color: '#dd6b20' };
-      } else if (distance < 10) {
-        return { text: 'VIDUTINIS', color: '#d69e2e' };
-      } else {
-        return { text: 'ŽEMAS', color: '#38a169' };
-      }
+      if (distance < 1) return { text: 'YPAČ AUKŠTAS', color: '#e53e3e' };
+      if (distance < 5) return { text: 'AUKŠTAS', color: '#dd6b20' };
+      if (distance < 10) return { text: 'VIDUTINIS', color: '#d69e2e' };
+      return { text: 'ŽEMAS', color: '#38a169' };
     }
 
     function addToHistory(time, temperature, distance, dangerLevel) {
@@ -666,11 +457,9 @@
       const entry = { time, temperature, distance, dangerLevel, timestamp };
       
       calculationHistory.unshift(entry);
-      
       if (calculationHistory.length > 10) {
         calculationHistory = calculationHistory.slice(0, 10);
       }
-      
       updateHistoryDisplay();
     }
 
@@ -719,10 +508,8 @@
     });
 
     document.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        if (!helpModal.classList.contains('show')) {
-            calculateDistance();
-        }
+      if (e.key === 'Enter' && !helpModal.classList.contains('show')) {
+        calculateDistance();
       }
     });
     
