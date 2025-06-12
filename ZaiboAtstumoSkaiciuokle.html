@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Žaibo Atstumo Skaičiuoklė su Lokacija</title>
   
-  <!-- Leaflet.js bibliotekos stiliai žemėlapiui -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 
   <style>
@@ -194,7 +193,7 @@
         <div class="history-list" id="historyList">
           <p style="text-align: center; color: #a0aec0; padding: 20px;">Čia bus rodoma atliktų skaičiavimų istorija</p>
         </div>
-        <button class="clear-btn" onclick="clearHistory()" style="display: none;" id="clearBtn">Išvalyti istoriją</button>
+        <button class="clear-btn" onclick="clearHistory()" style="display: none;" id="clearBtn">Išvalyti viską</button>
       </div>
       
       <button class="help-btn" onclick="openHelpModal()">Pagalba</button>
@@ -247,7 +246,9 @@
             <li>Jei nežinote tikslios temperatūros, naudokite <b>20°C</b>.</li>
             <li>Stebėkite kelis žaibus - atstumas gali keistis.</li>
             <li>Prisiminkite <b>30-30 taisyklę</b> - jei laikas tarp žaibo ir griaustinio iki <b>30</b> sekundžių, nedelsdami ieškokite pastogės. 
-              Pasibaigus audrai, palaukite bent <b>30</b> minučių po paskutinio griaustinio garso, prieš grįždami į lauką. Net jei atrodo, kad audra tolsta, žaibas gali trenkti iki 15 km nuo perkūnijos debesų – net ir tada, kai dangus virš jūsų atrodo giedras. Todėl ši taisyklė padeda išvengti pavojingų situacijų.</li>
+              Pasibaigus audrai, palaukite bent <b>30</b> minučių po paskutinio griaustinio garso, prieš grįždami į lauką.
+              Žaibas gali trenkti iki <b>15</b> km nuo perkūnijos debesų – net ir tada, kai dangus virš jūsų atrodo giedras. 
+              Todėl ši taisyklė padeda išvengti pavojingų situacijų.</li>
           </ul>
         </div>
       </div>
@@ -384,7 +385,6 @@
 
         map.fitBounds(lightningCircle.getBounds());
         
-        // Atnaujinti žemėlapio dydį po to kai jis tampa matomas, kad išvengti plytelių problemų
         setTimeout(() => { map.invalidateSize() }, 100);
     }
 
@@ -486,9 +486,29 @@
       clearBtn.style.display = 'block';
     }
 
+    // --- PATOBULINTA FUNKCIJA, KURI IŠVALO VISKĄ ---
     function clearHistory() {
+      // 1. Išvalome istorijos duomenų masyvą
       calculationHistory = [];
+      // 2. Atnaujiname istorijos vaizdą (tai paslėps ir patį mygtuką)
       updateHistoryDisplay();
+      
+      // 3. Paslepiame rezultatų sekciją
+      document.getElementById('resultSection').classList.remove('show');
+      
+      // 4. Išvalome įvesties laukus
+      document.getElementById('timeInput').value = '';
+      document.getElementById('tempInput').value = '';
+      
+      // 5. Išvalome galimus klaidų pranešimus
+      const existingError = document.querySelector('.error:not(#locationError)');
+      if (existingError) {
+        existingError.remove();
+      }
+      hideLocationError();
+      
+      // 6. Grąžiname fokusą į pirmą lauką patogesniam naudojimui
+      document.getElementById('timeInput').focus();
     }
 
     function openHelpModal() {
