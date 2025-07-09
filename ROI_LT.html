@@ -192,6 +192,40 @@
     </style>
 </head>
 <body>
+    <div style="position: absolute; top: 30px; right: 40px; z-index: 1000;">
+        <button id="help-btn" style="font-size: 22px; border: none; background: #f1f1f1; border-radius: 50%; width: 38px; height: 38px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">?</button>
+    </div>
+    <div id="help-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.35); z-index:2000; align-items:center; justify-content:center;">
+        <div style="background:white; max-width:480px; margin:60px auto; border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,0.18); padding:32px 28px 24px 28px; position:relative;">
+            <button id="close-help" style="position:absolute; top:12px; right:16px; font-size:20px; background:none; border:none; cursor:pointer;">&times;</button>
+            <h2 style="margin-top:0;">Kaip veikia ši skaičiuoklė?</h2>
+            <h3 style="margin-bottom:4px;">Kintamųjų reikšmės:</h3>
+            <ul style="margin-top:0;">
+                <li><b>H_m</b> – Sutaupytos darbo valandos per mėnesį</li>
+                <li><b>C_h</b> – Valandinis įkainis (EUR)</li>
+                <li><b>S_m</b> – Kita mėnesinė nauda (EUR)</li>
+                <li><b>O_m</b> – Eksploatacinės išlaidos per mėnesį (EUR)</li>
+                <li><b>I_0</b> – Pradinė investicija (EUR)</li>
+                <li><b>n</b> – Vertinimo laikotarpis (mėnesiais)</li>
+                <li><b>l</b> – Apkrovos koeficientas</li>
+                <li><b>r</b> – Diskonto norma (metinė, %)</li>
+            </ul>
+            <h3 style="margin-bottom:4px;">Skaičiavimo logika:</h3>
+            <ul style="margin-top:0;">
+                <li><b>Grynoji nauda (B_m):</b> <i>B_m = H_m × C_h + S_m – O_m</i></li>
+                <li><b>ROI:</b> <i>ROI = ((B_m × n – I_0) / I_0) × 100</i></li>
+                <li><b>Atsipirkimo laikotarpis:</b> <i>I_0 / B_m</i></li>
+                <li><b>NPV:</b> Diskontuota grynosios naudos suma per n mėnesių atėmus investiciją</li>
+                <li><b>IRR:</b> Vidinė grąžos norma (mėnesinė, metinė)</li>
+            </ul>
+            <h3 style="margin-bottom:4px;">Grafikai:</h3>
+            <ul style="margin-top:0;">
+                <li><b>Kaupiamasis pinigų srautas:</b> Rodo, kaip investicija atsiperka laikui bėgant, įskaitant atsipirkimo tašką.</li>
+                <li><b>Jautrumo analizė:</b> Vizualizuoja, kaip ROI keičiasi, jei pagrindiniai parametrai padidėja arba sumažėja 20%.</li>
+                <li><b>ROI šiluminis žemėlapis:</b> Rodo, kaip ROI priklauso nuo sutaupytų valandų ir valandinio įkainio.</li>
+            </ul>
+        </div>
+    </div>
     <div class="container">
         <h1>Automatizavimo ROI skaičiuoklė</h1>
         
@@ -1088,6 +1122,13 @@
             // Konvertuojame mėnesinę normą į metinę
             return Math.pow(1 + guess, 12) - 1;
         }
+
+        document.getElementById('help-btn').onclick = function() {
+            document.getElementById('help-modal').style.display = 'flex';
+        };
+        document.getElementById('close-help').onclick = function() {
+            document.getElementById('help-modal').style.display = 'none';
+        };
     </script>
 </body>
 </html>
