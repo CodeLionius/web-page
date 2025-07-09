@@ -232,8 +232,8 @@
         <div class="controls-header" style="display:flex; justify-content: flex-end; align-items:center; margin-bottom:10px;">
             <label for="currency-select" style="margin-right:8px; font-weight:500;">Currency:</label>
             <select id="currency-select" style="padding:4px 10px; font-size:15px; border-radius:5px; border:1px solid #ccc;">
-                <option value="EUR" selected>EUR</option>
-                <option value="USD">$</option>
+                <option value="USD" selected>$</option>
+                <option value="EUR">EUR</option>
             </select>
         </div>
         <div id="validation-message" style="color:#e74c3c; font-weight:bold; text-align:center; margin-bottom:15px;"></div>
@@ -329,7 +329,7 @@
         const chartElement = document.getElementById('chart');
         const inputs = document.querySelectorAll('input');
         const tabs = document.querySelectorAll('.tab');
-        let currency = 'EUR';
+        let currency = 'USD';
         document.getElementById('currency-select').addEventListener('change', function() {
             currency = this.value;
             updateMetricUnits();
