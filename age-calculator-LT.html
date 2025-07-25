@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amžiaus Skaičiuoklė</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .date-inputs {
+            display: flex;
+            gap: 1rem;
+        }
+        .date-inputs .form-group {
+            flex: 1;
+        }
+        button {
+            width: 100%;
+            padding: 0.85rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #result {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #eee;
+        }
+        .error {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        .result-section {
+            background-color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        .result-section h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #2c3e50;
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 0.5rem;
+        }
+        .result-section p {
+            margin: 0.5rem 0;
+        }
+        .highlight {
+            color: #3498db;
+            font-weight: bold;
+        }
+        .birthday-note {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #27ae60;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🎂 Amžiaus Skaičiuoklė 🎂</h1>
+        <form id="age-form">
+            <div class="form-group">
+                <label for="name">Vardas</label>
+                <input type="text" id="name" required>
+                <div class="error" id="name-error"></div>
+            </div>
+            <div class="date-inputs">
+                <div class="form-group">
+                    <label for="year">Gimimo Metai</label>
+                    <input type="number" id="year" placeholder="YYYY" required>
+                </div>
+                <div class="form-group">
+                    <label for="month">Mėnuo</label>
+                    <input type="number" id="month" placeholder="MM" required>
+                </div>
+                <div class="form-group">
+                    <label for="day">Diena</label>
+                    <input type="number" id="day" placeholder="DD" required>
+                </div>
+            </div>
+            <div class="error" id="date-error"></div>
+            <button type="submit">Apskaičiuoti</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('age-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Clear previous results and errors
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('name-error').textContent = '';
+            document.getElementById('date-error').textContent = '';
+
+            // Get inputs
+            const name = document.getElementById('name').value;
+            const year = parseInt(document.getElementById('year').value, 10);
+            const month = parseInt(document.getElementById('month').value, 10);
+            const day = parseInt(document.getElementById('day').value, 10);
+
+            // --- Validation ---
+            let isValid = true;
+            if (!/^[a-zA-ZąčęėįšųūžĄČĘĖĮŠŲŪŽ\s'-]+$/.test(name) || name.length > 50) {
+                document.getElementById('name-error').textContent = 'Vardo reikšmė turėtų turėti tik raides, tarpus ar brūkšnelius (iki 50 simbolių).';
+                isValid = false;
+            }
+
+            const currentYear = new Date().getFullYear();
+            if (isNaN(year) || year < 1900 || year > currentYear) {
+                document.getElementById('date-error').textContent = `Metų reikšmė turi būti skaičius tarp 1900 ir ${currentYear}.`;
+                isValid = false;
+            }
+            if (isNaN(month) || month < 1 || month > 12) {
+                document.getElementById('date-error').textContent = 'Mėnuo turi būti tarp 1 ir 12.';
+                isValid = false;
+            }
+
+            const daysInMonth = getDaysInMonth(year, month);
+            if (isNaN(day) || day < 1 || day > daysInMonth) {
+                document.getElementById('date-error').textContent = `Diena turi būti tarp 1 ir ${daysInMonth}.`;
+                isValid = false;
+            }
+
+            const birthDate = new Date(year, month - 1, day);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize today's date
+            if (birthDate > today) {
+                document.getElementById('date-error').textContent = 'Gimimo data negali būti ateityje.';
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            // --- Calculations ---
+            const ageInfo = calculateAge(birthDate, today);
+            const nextBirthdayInfo = calculateNextBirthday(birthDate, today);
+            const zodiacSign = getZodiacSign(birthDate);
+
+            // --- Display Results ---
+            displayResults(name, birthDate, ageInfo, nextBirthdayInfo, zodiacSign);
+        });
+
+        function isLeapYear(year) {
+            return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        }
+
+        function getDaysInMonth(year, month) {
+            if (month === 2) {
+                return isLeapYear(year) ? 29 : 28;
+            }
+            return new Date(year, month, 0).getDate();
+        }
+
+        function calculateAge(birthDate, today) {
+            let years = today.getFullYear() - birthDate.getFullYear();
+            let months = today.getMonth() - birthDate.getMonth();
+            let days = today.getDate() - birthDate.getDate();
+
+            if (days < 0) {
+                months--;
+                days += getDaysInMonth(today.getFullYear(), today.getMonth());
+            }
+
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            
+            const totalDays = Math.floor((today - birthDate) / (1000 * 60 * 60 * 24));
+            const totalWeeks = Math.floor(totalDays / 7);
+            const totalMonths = years * 12 + months;
+
+            return { years, months, days, totalDays, totalWeeks, totalMonths };
+        }
+
+        function calculateNextBirthday(birthDate, today) {
+            const currentYear = today.getFullYear();
+            let nextBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+
+            if (nextBirthday < today) {
+                nextBirthday.setFullYear(currentYear + 1);
+            }
+            
+            // Handle leap day birthdays
+            if (birthDate.getMonth() === 1 && birthDate.getDate() === 29 && !isLeapYear(nextBirthday.getFullYear())) {
+                 nextBirthday.setDate(28);
+            }
+
+            const daysToBirthday = Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
+            return { daysToBirthday, nextBirthdayDate: nextBirthday };
+        }
+
+        function getZodiacSign(birthDate) {
+            const day = birthDate.getDate();
+            const month = birthDate.getMonth() + 1;
+            if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return "Vandenis ♒️";
+            if ((month == 2 && day >= 19) || (month == 3 && day <= 20)) return "Žuvys ♓️";
+            if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return "Avinas ♈️";
+            if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) return "Jautis ♉️";
+            if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) return "Dvyniai ♊️";
+            if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) return "Vėžys ♋️";
+            if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return "Liūtas ♌️";
+            if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) return "Mergelė ♍️";
+            if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) return "Svarstyklės ♎️";
+            if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) return "Skorpionas ♏️";
+            if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) return "Šaulys ♐️";
+            if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return "Ožiaragis ♑️";
+            return "Nenustatytas";
+        }
+
+        function getWeekNumber(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+            var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+            return weekNo;
+        }
+
+        function displayResults(name, birthDate, ageInfo, nextBirthdayInfo, zodiacSign) {
+            const resultDiv = document.getElementById('result');
+            
+            const lithuanianMonths = ["sausio", "vasario", "kovo", "balandžio", "gegužės", "birželio", "liepos", "rugpjūčio", "rugsėjo", "spalio", "lapkričio", "gruodžio"];
+            const lithuanianWeekdays = ["sekmadienis", "pirmadienis", "antradienis", "trečiadienis", "ketvirtadienis", "penktadienis", "šeštadienis"];
+
+            const birthDateStr = `${birthDate.getFullYear()} m. ${lithuanianMonths[birthDate.getMonth()]} ${birthDate.getDate()} d., ${lithuanianWeekdays[birthDate.getDay()]}`;
+            const dayOfYear = Math.floor((birthDate - new Date(birthDate.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+            const weekOfYear = getWeekNumber(birthDate);
+
+            let resultHTML = `
+                <div class="result-section">
+                    <h2>Sveiki, ${name.charAt(0).toUpperCase() + name.slice(1)}!</h2>
+                    <p><strong>📅 Gimimo data:</strong> ${birthDateStr}</p>
+                    <p><strong>🌟 Zodiako ženklas:</strong> ${zodiacSign}</p>
+                    <p><strong>📊 Metų diena:</strong> ${dayOfYear}</p>
+                    <p><strong>🗓️ Metų savaitė:</strong> ${weekOfYear}</p>
+                    ${(birthDate.getMonth() === 1 && birthDate.getDate() === 29) ? '<p class="highlight">🎈 Gimėte keliamųjų metų dieną! 🎈</p>' : ''}
+                </div>
+
+                <div class="result-section">
+                    <h2>⏳ Dabartinis amžius</h2>
+                    <p class="highlight">${ageInfo.years} metai, ${ageInfo.months} mėn. ir ${ageInfo.days} d.</p>
+                </div>
+
+                <div class="result-section">
+                    <h2>📊 Amžiaus statistika</h2>
+                    <p><strong>Iš viso mėnesių:</strong> ${ageInfo.totalMonths.toLocaleString('lt-LT')}</p>
+                    <p><strong>Iš viso savaičių:</strong> ${ageInfo.totalWeeks.toLocaleString('lt-LT')}</p>
+                    <p><strong>Iš viso dienų:</strong> ${ageInfo.totalDays.toLocaleString('lt-LT')}</p>
+                </div>
+            `;
+
+            if (nextBirthdayInfo.daysToBirthday === 0 || nextBirthdayInfo.daysToBirthday === 365 || nextBirthdayInfo.daysToBirthday === 366) {
+                 resultHTML += `<div class="birthday-note">🎉 Su gimtadieniu! Šiandien jūsų ypatinga diena! 🎉</div>`;
+            } else {
+                const nextBirthdayDate = nextBirthdayInfo.nextBirthdayDate;
+                const nextBirthdayStr = `${nextBirthdayDate.getFullYear()} m. ${lithuanianMonths[nextBirthdayDate.getMonth()]} ${nextBirthdayDate.getDate()} d. (${lithuanianWeekdays[nextBirthdayDate.getDay()]})`;
+                resultHTML += `
+                    <div class="result-section">
+                        <h2>🎉 Kitas gimtadienis</h2>
+                        <p><strong>Data:</strong> ${nextBirthdayStr}</p>
+                        <p><strong>⏰ Liko dienų:</strong> ${nextBirthdayInfo.daysToBirthday}</p>
+                        ${(birthDate.getMonth() === 1 && birthDate.getDate() === 29 && !isLeapYear(nextBirthdayDate.getFullYear())) ? '<p><small>(Švęsime vasario 28 d., ne keliamaisiais metais)</small></p>' : ''}
+                    </div>
+                `;
+            }
+
+            resultDiv.innerHTML = resultHTML;
+        }
+    </script>
+
+</body>
+</html>
