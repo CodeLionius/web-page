@@ -188,9 +188,10 @@
             const ageInfo = calculateAge(birthDate, today);
             const nextBirthdayInfo = calculateNextBirthday(birthDate, today);
             const zodiacSign = getZodiacSign(birthDate);
+            const chineseZodiacSign = getChineseZodiacSign(year);
 
             // --- Display Results ---
-            displayResults(name, birthDate, ageInfo, nextBirthdayInfo, zodiacSign);
+            displayResults(name, birthDate, ageInfo, nextBirthdayInfo, zodiacSign, chineseZodiacSign);
         });
 
         function isLeapYear(year) {
@@ -261,6 +262,11 @@
             return "Nenustatytas";
         }
 
+        function getChineseZodiacSign(year) {
+            const signs = ["Žiurkė 🐀", "Jautis 🐂", "Tigras 🐅", "Kiškis 🐇", "Drakonas 🐉", "Gyvatė 🐍", "Arklys 🐎", "Ožka 🐐", "Beždžionė 🐒", "Gaidys 🐓", "Šuo 🐕", "Kiaulė 🐖"];
+            return signs[(year - 4) % 12];
+        }
+
         function getWeekNumber(d) {
             d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
             d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
@@ -269,7 +275,7 @@
             return weekNo;
         }
 
-        function displayResults(name, birthDate, ageInfo, nextBirthdayInfo, zodiacSign) {
+        function displayResults(name, birthDate, ageInfo, nextBirthdayInfo, zodiacSign, chineseZodiacSign) {
             const resultDiv = document.getElementById('result');
             
             const lithuanianMonths = ["sausio", "vasario", "kovo", "balandžio", "gegužės", "birželio", "liepos", "rugpjūčio", "rugsėjo", "spalio", "lapkričio", "gruodžio"];
@@ -284,6 +290,7 @@
                     <h2>Sveiki, ${name.charAt(0).toUpperCase() + name.slice(1)}!</h2>
                     <p><strong>📅 Gimimo data:</strong> ${birthDateStr}</p>
                     <p><strong>🌟 Zodiako ženklas:</strong> ${zodiacSign}</p>
+                    <p><strong>🐉 Kinų Zodiako ženklas:</strong> ${chineseZodiacSign}</p>
                     <p><strong>📊 Metų diena:</strong> ${dayOfYear}</p>
                     <p><strong>🗓️ Metų savaitė:</strong> ${weekOfYear}</p>
                     ${(birthDate.getMonth() === 1 && birthDate.getDate() === 29) ? '<p class="highlight">🎈 Gimėte keliamųjų metų dieną! 🎈</p>' : ''}
@@ -311,7 +318,7 @@
                     <div class="result-section">
                         <h2>🎉 Kitas gimtadienis</h2>
                         <p><strong>Data:</strong> ${nextBirthdayStr}</p>
-                        <p><strong>⏰ Liko dienų:</strong> ${nextBirthdayInfo.daysToBirthday}</p>
+                        <p><strong>⏰ Iki kito gimadienio liko:</strong> ${nextBirthdayInfo.daysToBirthday} ${nextBirthdayInfo.daysToBirthday % 10 === 0 ? 'dienų' : (nextBirthdayInfo.daysToBirthday % 10 === 1 ? 'diena' : 'dienos')}</p>
                         ${(birthDate.getMonth() === 1 && birthDate.getDate() === 29 && !isLeapYear(nextBirthdayDate.getFullYear())) ? '<p><small>(Švęsime vasario 28 d., ne keliamaisiais metais)</small></p>' : ''}
                     </div>
                 `;
