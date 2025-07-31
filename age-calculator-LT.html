@@ -307,7 +307,7 @@
             const lithuanianMonths = ["sausio", "vasario", "kovo", "balandžio", "gegužės", "birželio", "liepos", "rugpjūčio", "rugsėjo", "spalio", "lapkričio", "gruodžio"];
             const lithuanianWeekdays = ["sekmadienis", "pirmadienis", "antradienis", "trečiadienis", "ketvirtadienis", "penktadienis", "šeštadienis"];
 
-            const birthDateStr = `${birthDate.getFullYear()} m. ${lithuanianMonths[birthDate.getMonth()]} ${birthDate.getDate()} d., ${lithuanianWeekdays[birthDate.getDay()]}`;
+            const birthDateStr = `${birthDate.getFullYear()} m. ${lithuanianMonths[birthDate.getMonth()]} ${birthDate.getDate()} d. (${lithuanianWeekdays[birthDate.getDay()]})`;
             const dayOfYear = Math.floor((birthDate - new Date(birthDate.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
             const weekOfYear = getWeekNumber(birthDate);
 
