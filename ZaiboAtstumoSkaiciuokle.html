@@ -44,6 +44,33 @@
     .lightning-icon { font-size: 1.2em; animation: flash 2s infinite; }
     @keyframes flash { 0%, 50%, 100% { opacity: 1; } 25%, 75% { opacity: 0.3; } }
     .subtitle { text-align: center; color: #718096; margin-bottom: 30px; font-size: 1.1em; }
+    
+    .input-method-selector {
+      display: flex;
+      background: #f7fafc;
+      border-radius: 12px;
+      padding: 5px;
+      margin-bottom: 25px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .method-btn {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      color: #718096;
+      font-size: 0.95em;
+    }
+    .method-btn.active {
+      background: white;
+      color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+    
     .input-group { margin-bottom: 25px; }
     .input-group label { display: block; color: #4a5568; font-weight: 600; margin-bottom: 8px; font-size: 0.95em; }
     .input-container { position: relative; }
@@ -55,6 +82,85 @@
       border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); transform: translateY(-2px);
     }
     .unit { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #a0aec0; font-weight: 500; pointer-events: none; }
+    
+    .timer-section {
+      display: none;
+      background: linear-gradient(135deg, #f7fafc, #edf2f7);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 25px;
+      text-align: center;
+      border: 2px solid #e2e8f0;
+    }
+    .timer-section.show { display: block; }
+    
+    .timer-display {
+      font-size: 3em;
+      font-weight: 700;
+      color: #2d3748;
+      margin: 20px 0;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .timer-btn {
+      padding: 18px 30px;
+      font-size: 1.2em;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 10px;
+      min-width: 160px;
+    }
+    
+    .start-timer-btn {
+      background: linear-gradient(135deg, #48bb78, #38a169);
+      color: white;
+    }
+    .start-timer-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(72, 187, 120, 0.3); }
+    .start-timer-btn:disabled { 
+      background: #cbd5e0; 
+      cursor: not-allowed; 
+      transform: none; 
+      box-shadow: none; 
+    }
+    
+    .stop-timer-btn {
+      background: linear-gradient(135deg, #e53e3e, #c53030);
+      color: white;
+    }
+    .stop-timer-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(229, 62, 62, 0.3); }
+    .stop-timer-btn:disabled { 
+      background: #cbd5e0; 
+      cursor: not-allowed; 
+      transform: none; 
+      box-shadow: none; 
+    }
+    
+    .reset-timer-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+    .reset-timer-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3); }
+    
+    .timer-instructions {
+      color: #4a5568;
+      font-size: 1em;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .manual-input-section {
+      display: block;
+    }
+    .manual-input-section.hide { display: none; }
+    
     .button-group {
       display: grid;
       grid-template-columns: 1fr;
@@ -80,7 +186,7 @@
     .help-btn {
       width: 100%; background: transparent; color: #667eea; padding: 15px; font-size: 1.1em;
       font-weight: 600; border: 2px solid #667eea; border-radius: 12px; cursor: pointer; transition: all 0.3s ease;
-      margin-top: 15px; /* Pridėtas tarpas */
+      margin-top: 15px;
     }
     .help-btn:hover { background: rgba(102, 126, 234, 0.1); transform: translateY(-2px); }
     .result-section { margin-top: 30px; opacity: 0; transform: translateY(20px); transition: all 0.5s ease; max-height: 0; overflow: hidden; }
@@ -128,6 +234,8 @@
       .weather-info { grid-template-columns: 1fr; }
       .modal-content { padding: 25px; }
       .button-group { grid-template-columns: 1fr; }
+      .timer-display { font-size: 2.5em; }
+      .timer-btn { padding: 15px 20px; font-size: 1.1em; min-width: 140px; }
     }
   </style>
 </head>
@@ -139,11 +247,32 @@
       <h1><span class="lightning-icon">⚡</span>Žaibo Atstumo Skaičiuoklė</h1>
       <p class="subtitle">Apskaičiuokite atstumą ir pamatykite galimą žaibo vietą žemėlapyje</p>
       
-      <div class="input-group">
-        <label for="timeInput">Laikas tarp blyksnio ir griaustinio</label>
-        <div class="input-container">
-          <input type="number" id="timeInput" placeholder="pvz.: 3" min="0" step="0.1" />
-          <span class="unit">sek</span>
+      <div class="input-method-selector">
+        <button class="method-btn active" onclick="switchInputMethod('manual')">✏️ Rankinė įvestis</button>
+        <button class="method-btn" onclick="switchInputMethod('timer')">⏱️ Laiko matavimas</button>
+      </div>
+      
+      <div class="timer-section" id="timerSection">
+        <div class="timer-instructions">
+          <strong>Instrukcijos:</strong><br>
+          1. Išvydę žaibą, spauskite "Pradėti matavimą"<br>
+          2. Išgirdę griaustinį, spauskite "Stabdyti matavimą"<br>
+          3. Laikas bus automatiškai panaudotas skaičiavimui
+        </div>
+        <div class="timer-display" id="timerDisplay">0.0</div>
+        <div>
+          <button class="timer-btn start-timer-btn" id="toggleTimerBtn" onclick="toggleTimer()">▶️ Pradėti matavimą</button>
+          <button class="timer-btn reset-timer-btn" id="resetTimerBtn" onclick="resetTimer()">🔄 Iš naujo</button>
+        </div>
+      </div>
+      
+      <div class="manual-input-section" id="manualInputSection">
+        <div class="input-group">
+          <label for="timeInput">Laikas tarp blyksnio ir griaustinio</label>
+          <div class="input-container">
+            <input type="number" id="timeInput" placeholder="pvz.: 3" min="0" step="0.1" />
+            <span class="unit">sek</span>
+          </div>
         </div>
       </div>
 
@@ -216,6 +345,18 @@
         </div>
       </div>
       <div class="info-section">
+        <h2 class="info-title">⏱️ Laiko matavimas</h2>
+        <div class="info-content">
+          Naudokite laiko matavimo funkciją tikslesniam rezultatui:
+        </div>
+        <ul style="color: #4a5568; padding-left: 20px; line-height: 1.6;">
+          <li>Išvydę žaibą, tuoj pat spauskite "Pradėti matavimą"</li>
+          <li>Išgirdę griaustinį, spauskite "Stabdyti matavimą"</li>
+          <li>Laikas bus automatiškai įrašytas ir panaudotas skaičiavimui</li>
+          <li>Galite iš naujo matuoti spausdami "Iš naujo"</li>
+        </ul>
+      </div>
+      <div class="info-section">
         <h2 class="info-title">⚠️ Saugumas</h2>
         <div class="tips">
           <div class="tips-title">Svarbu žinoti:</div>
@@ -242,7 +383,7 @@
         <h2 class="info-title">💡 Patarimai</h2>
         <div class="info-content">
           <ul style="color: #4a5568; padding-left: 20px; line-height: 1.8;">
-            <li>Skaičiuokite sekundes nuo blyksnio momento iki griaustinio garso.</li>
+            <li>Naudokite laiko matavimo funkciją tikslesniam rezultatui.</li>
             <li>Jei nežinote tikslios temperatūros, naudokite <b>20°C</b>.</li>
             <li>Stebėkite kelis žaibus - atstumas gali keistis.</li>
             <li>Prisiminkite <b>30-30 taisyklę</b> - jei laikas tarp žaibo ir griaustinio iki <b>30</b> sekundžių, nedelsdami ieškokite pastogės. 
@@ -263,8 +404,108 @@
     let map = null;
     let userMarker = null;
     let lightningCircle = null;
+    
+    // Timer variables
+    let timerStartTime = null;
+    let timerInterval = null;
+    let currentInputMethod = 'manual';
 
     const helpModal = document.getElementById('helpModal');
+
+    function switchInputMethod(method) {
+      currentInputMethod = method;
+      const manualBtn = document.querySelector('.method-btn:first-child');
+      const timerBtn = document.querySelector('.method-btn:last-child');
+      const manualSection = document.getElementById('manualInputSection');
+      const timerSection = document.getElementById('timerSection');
+      
+      if (method === 'manual') {
+        manualBtn.classList.add('active');
+        timerBtn.classList.remove('active');
+        manualSection.classList.remove('hide');
+        timerSection.classList.remove('show');
+        resetTimer();
+      } else {
+        timerBtn.classList.add('active');
+        manualBtn.classList.remove('active');
+        manualSection.classList.add('hide');
+        timerSection.classList.add('show');
+        document.getElementById('timeInput').value = '';
+      }
+    }
+
+    function toggleTimer() {
+      if (timerInterval) {
+        stopTimer();
+      } else {
+        startTimer();
+      }
+    }
+    
+    function startTimer() {
+      if (timerInterval) return;
+      
+      timerStartTime = Date.now();
+      const toggleBtn = document.getElementById('toggleTimerBtn');
+      
+      toggleBtn.classList.remove('start-timer-btn');
+      toggleBtn.classList.add('stop-timer-btn');
+      toggleBtn.innerHTML = '⏹️ Stabdyti matavimą';
+      
+      timerInterval = setInterval(updateTimer, 100);
+    }
+    
+    function stopTimer() {
+      if (!timerInterval) return;
+      
+      clearInterval(timerInterval);
+      const elapsed = (Date.now() - timerStartTime) / 1000;
+      document.getElementById('timerDisplay').textContent = elapsed.toFixed(1);
+      timerInterval = null;
+      
+      const toggleBtn = document.getElementById('toggleTimerBtn');
+      toggleBtn.classList.remove('stop-timer-btn');
+      toggleBtn.classList.add('start-timer-btn');
+      toggleBtn.innerHTML = '▶️ Pradėti matavimą';
+      
+      // Auto-calculate after stopping timer
+      setTimeout(() => {
+        calculateDistance();
+      }, 500);
+    }
+    
+    function resetTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      
+      timerStartTime = null;
+      document.getElementById('timerDisplay').textContent = '0.0';
+      
+      const toggleBtn = document.getElementById('toggleTimerBtn');
+      toggleBtn.classList.remove('stop-timer-btn');
+      toggleBtn.classList.add('start-timer-btn');
+      toggleBtn.innerHTML = '▶️ Pradėti matavimą';
+      toggleBtn.disabled = false;
+    }
+    
+    function updateTimer() {
+      if (!timerStartTime) return;
+      
+      const elapsed = (Date.now() - timerStartTime) / 1000;
+      document.getElementById('timerDisplay').textContent = elapsed.toFixed(1);
+    }
+    
+    function getCurrentTime() {
+        if (currentInputMethod === 'timer') {
+            const timeValue = parseFloat(document.getElementById('timerDisplay').textContent);
+            return isNaN(timeValue) || timeValue === 0.0 ? null : timeValue;
+        } else {
+            const timeValue = parseFloat(document.getElementById('timeInput').value);
+            return isNaN(timeValue) ? null : timeValue;
+        }
+    }
 
     function getLocation() {
         if (!navigator.geolocation) {
@@ -325,9 +566,8 @@
     }
 
     function calculateDistance() {
-      const timeInput = document.getElementById('timeInput');
+      const time = getCurrentTime();
       const tempInput = document.getElementById('tempInput');
-      const time = parseFloat(timeInput.value);
       const temperature = parseFloat(tempInput.value) || 20;
       
       showLoading(true);
@@ -335,8 +575,12 @@
       setTimeout(() => {
         showLoading(false);
         
-        if (isNaN(time) || time < 0) {
-          showError('Įveskite teisingą laiką (sekundėmis)!');
+        if (time === null || time < 0) {
+          if (currentInputMethod === 'timer') {
+            showError('Pradėkite laiko matavimą paspaudę "Pradėti matavimą"!');
+          } else {
+            showError('Įveskite teisingą laiką (sekundėmis)!');
+          }
           document.getElementById('map').classList.remove('show');
           return;
         }
@@ -412,9 +656,11 @@
       const dangerLevelEl = document.getElementById('dangerLevel');
 
       mainResult.textContent = `${distance.toFixed(2)} km`;
+      
+      const methodText = currentInputMethod === 'timer' ? 'išmatuotu laiku' : 'įvestu laiku';
       detailsResult.innerHTML = `
-        Žaibas nutiko <strong>${distance.toFixed(2)} km</strong> atstumu nuo jūsų.<br>
-        Skaičiavimas pagrįstas <strong>${temperature}°C</strong> temperatūra ir <strong>${time}s</strong> laiku.
+        Žaibas trenkė <strong>${distance.toFixed(2)} km</strong> atstumu nuo jūsų.<br>
+        Skaičiavimas pagrįstas <strong>${temperature}°C</strong> temperatūra ir <strong>${time.toFixed(1)}s</strong> ${methodText}.
       `;
       
       soundSpeedEl.textContent = `${soundSpeed.toFixed(1)} m/s`;
@@ -454,7 +700,8 @@
 
     function addToHistory(time, temperature, distance, dangerLevel) {
       const timestamp = new Date().toLocaleString('lt-LT');
-      const entry = { time, temperature, distance, dangerLevel, timestamp };
+      const method = currentInputMethod === 'timer' ? 'Išmatuota' : 'Įvesta';
+      const entry = { time, temperature, distance, dangerLevel, timestamp, method };
       
       calculationHistory.unshift(entry);
       if (calculationHistory.length > 10) {
@@ -477,7 +724,7 @@
         <div class="history-item">
           <div>
             <strong>${entry.distance.toFixed(2)} km</strong> - ${entry.dangerLevel.text}<br>
-            <small>${entry.time}s, ${entry.temperature}°C</small>
+            <small>${entry.time.toFixed(1)}s (${entry.method}), ${entry.temperature}°C</small>
           </div>
           <small>${entry.timestamp}</small>
         </div>
@@ -486,29 +733,26 @@
       clearBtn.style.display = 'block';
     }
 
-    // --- PATOBULINTA FUNKCIJA, KURI IŠVALO VISKĄ ---
     function clearHistory() {
-      // 1. Išvalome istorijos duomenų masyvą
       calculationHistory = [];
-      // 2. Atnaujiname istorijos vaizdą (tai paslėps ir patį mygtuką)
       updateHistoryDisplay();
       
-      // 3. Paslepiame rezultatų sekciją
       document.getElementById('resultSection').classList.remove('show');
       
-      // 4. Išvalome įvesties laukus
       document.getElementById('timeInput').value = '';
       document.getElementById('tempInput').value = '';
       
-      // 5. Išvalome galimus klaidų pranešimus
       const existingError = document.querySelector('.error:not(#locationError)');
       if (existingError) {
         existingError.remove();
       }
       hideLocationError();
       
-      // 6. Grąžiname fokusą į pirmą lauką patogesniam naudojimui
-      document.getElementById('timeInput').focus();
+      resetTimer();
+      
+      if (currentInputMethod === 'manual') {
+        document.getElementById('timeInput').focus();
+      }
     }
 
     function openHelpModal() {
@@ -529,7 +773,11 @@
 
     document.addEventListener('keypress', function(e) {
       if (e.key === 'Enter' && !helpModal.classList.contains('show')) {
-        calculateDistance();
+        if (currentInputMethod === 'timer') {
+          toggleTimer();
+        } else {
+          calculateDistance();
+        }
       }
     });
     
@@ -537,9 +785,18 @@
         if (e.key === 'Escape' && helpModal.classList.contains('show')) {
             closeHelpModal();
         }
+        
+        // Space bar shortcuts for timer
+        if (e.code === 'Space' && currentInputMethod === 'timer' && !helpModal.classList.contains('show')) {
+          e.preventDefault();
+          toggleTimer();
+        }
     });
 
-    document.getElementById('timeInput').focus();
+    // Focus on appropriate input based on method
+    if (currentInputMethod === 'manual') {
+      document.getElementById('timeInput').focus();
+    }
   </script>
 </body>
 </html>
