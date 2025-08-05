@@ -248,8 +248,8 @@
       <p class="subtitle">Apskaičiuokite atstumą ir pamatykite galimą žaibo vietą žemėlapyje</p>
       
       <div class="input-method-selector">
-        <button class="method-btn active" onclick="switchInputMethod('manual')">✏️ Rankinė įvestis</button>
-        <button class="method-btn" onclick="switchInputMethod('timer')">⏱️ Laiko matavimas</button>
+        <button class="method-btn active" data-method="manual">✏️ Rankinė įvestis</button>
+        <button class="method-btn" data-method="timer">⏱️ Laiko matavimas</button>
       </div>
       
       <div class="timer-section" id="timerSection">
@@ -261,8 +261,8 @@
         </div>
         <div class="timer-display" id="timerDisplay">0.0</div>
         <div>
-          <button class="timer-btn start-timer-btn" id="toggleTimerBtn" onclick="toggleTimer()">▶️ Pradėti matavimą</button>
-          <button class="timer-btn reset-timer-btn" id="resetTimerBtn" onclick="resetTimer()">🔄 Iš naujo</button>
+          <button class="timer-btn start-timer-btn" id="toggleTimerBtn">▶️ Pradėti matavimą</button>
+          <button class="timer-btn reset-timer-btn" id="resetTimerBtn">🔄 Iš naujo</button>
         </div>
       </div>
       
@@ -285,11 +285,11 @@
       </div>
       
       <div class="button-group">
-        <button id="locationBtn" class="location-btn" onclick="getLocation()">
+        <button id="locationBtn" class="location-btn">
           <div class="loader" id="locationLoader"></div>
           <span class="btn-text" id="locationBtnText">📍 Nustatyti mano lokaciją</span>
         </button>
-        <button class="calculate-btn" onclick="calculateDistance()">
+        <button class="calculate-btn">
           <div class="loader" id="calculateLoader"></div>
           <span class="btn-text" id="calculateBtnText">Skaičiuoti atstumą</span>
         </button>
@@ -322,16 +322,16 @@
         <div class="history-list" id="historyList">
           <p style="text-align: center; color: #a0aec0; padding: 20px;">Čia bus rodoma atliktų skaičiavimų istorija</p>
         </div>
-        <button class="clear-btn" onclick="clearHistory()" style="display: none;" id="clearBtn">Išvalyti viską</button>
+        <button class="clear-btn" style="display: none;" id="clearBtn">Išvalyti viską</button>
       </div>
       
-      <button class="help-btn" onclick="openHelpModal()">Pagalba</button>
+      <button class="help-btn">Pagalba</button>
     </div>
   </div>
 
   <div id="helpModal" class="modal-overlay">
     <div class="modal-content">
-      <span class="close-btn" onclick="closeHelpModal()">×</span>
+      <span class="close-btn">×</span>
       <div class="info-section">
         <h2 class="info-title">🔬 Kaip tai veikia?</h2>
         <div class="info-content">
@@ -357,14 +357,17 @@
         </ul>
       </div>
       <div class="info-section">
-        <h2 class="info-title">⚠️ Saugumas</h2>
+        <h2 class="info-title">⚠️ Saugumas ir pavojingumo lygiai</h2>
+        <div class="info-content">
+          Skaičiuoklė automatiškai įvertina pavojingumo lygį pagal apskaičiuotą atstumą. Štai ką reiškia kiekvienas lygis:
+        </div>
         <div class="tips">
-          <div class="tips-title">Svarbu žinoti:</div>
+          <div class="tips-title">Pavojingumo lygiai:</div>
           <ul>
-            <li><strong>< 1 km:</strong> Ypač pavojinga! Ieškokite priedangos.</li>
-            <li><strong>1-5 km:</strong> Pavojinga zona, laikykitės viduje.</li>
-            <li><strong>5-10 km:</strong> Vidutinis pavojus, stebėkite situaciją.</li>
-            <li><strong>> 10 km:</strong> Santykinai saugu, bet būkite atsargūs.</li>
+            <li><strong style="color: #e53e3e;">YPAČ AUKŠTAS (< 1 km):</strong> Esate epicentre. Nedelsdami ieškokite saugios priedangos (pastato, automobilio). Venkite atvirų laukų, medžių ir vandens telkinių.</li>
+            <li><strong style="color: #dd6b20;">AUKŠTAS (1-5 km):</strong> Pavojinga zona. Griaustinis yra labai arti. Rekomenduojama likti patalpoje ir atsitraukti nuo langų.</li>
+            <li><strong style="color: #d69e2e;">VIDUTINIS (5-10 km):</strong> Vidutinis pavojus. Stebėkite situaciją ir būkite pasiruošę ieškoti priedangos, jei audra artėja.</li>
+            <li><strong style="color: #38a169;">ŽEMAS (> 10 km):</strong> Santykinai saugu, tačiau audra vis dar gali būti girdima. Būkite atsargūs ir stebėkite dangų.</li>
           </ul>
         </div>
       </div>
@@ -399,404 +402,410 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <script>
-    let calculationHistory = [];
-    let userLocation = null;
-    let map = null;
-    let userMarker = null;
-    let lightningCircle = null;
-    
-    // Timer variables
-    let timerStartTime = null;
-    let timerInterval = null;
-    let currentInputMethod = 'manual';
-
-    const helpModal = document.getElementById('helpModal');
-
-    function switchInputMethod(method) {
-      currentInputMethod = method;
-      const manualBtn = document.querySelector('.method-btn:first-child');
-      const timerBtn = document.querySelector('.method-btn:last-child');
-      const manualSection = document.getElementById('manualInputSection');
-      const timerSection = document.getElementById('timerSection');
-      
-      if (method === 'manual') {
-        manualBtn.classList.add('active');
-        timerBtn.classList.remove('active');
-        manualSection.classList.remove('hide');
-        timerSection.classList.remove('show');
-        resetTimer();
-      } else {
-        timerBtn.classList.add('active');
-        manualBtn.classList.remove('active');
-        manualSection.classList.add('hide');
-        timerSection.classList.add('show');
-        document.getElementById('timeInput').value = '';
-      }
-    }
-
-    function toggleTimer() {
-      if (timerInterval) {
-        stopTimer();
-      } else {
-        startTimer();
-      }
-    }
-    
-    function startTimer() {
-      if (timerInterval) return;
-      
-      timerStartTime = Date.now();
-      const toggleBtn = document.getElementById('toggleTimerBtn');
-      
-      toggleBtn.classList.remove('start-timer-btn');
-      toggleBtn.classList.add('stop-timer-btn');
-      toggleBtn.innerHTML = '⏹️ Stabdyti matavimą';
-      
-      timerInterval = setInterval(updateTimer, 100);
-    }
-    
-    function stopTimer() {
-      if (!timerInterval) return;
-      
-      clearInterval(timerInterval);
-      const elapsed = (Date.now() - timerStartTime) / 1000;
-      document.getElementById('timerDisplay').textContent = elapsed.toFixed(1);
-      timerInterval = null;
-      
-      const toggleBtn = document.getElementById('toggleTimerBtn');
-      toggleBtn.classList.remove('stop-timer-btn');
-      toggleBtn.classList.add('start-timer-btn');
-      toggleBtn.innerHTML = '▶️ Pradėti matavimą';
-      
-      // Auto-calculate after stopping timer
-      setTimeout(() => {
-        calculateDistance();
-      }, 500);
-    }
-    
-    function resetTimer() {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-      
-      timerStartTime = null;
-      document.getElementById('timerDisplay').textContent = '0.0';
-      
-      const toggleBtn = document.getElementById('toggleTimerBtn');
-      toggleBtn.classList.remove('stop-timer-btn');
-      toggleBtn.classList.add('start-timer-btn');
-      toggleBtn.innerHTML = '▶️ Pradėti matavimą';
-      toggleBtn.disabled = false;
-    }
-    
-    function updateTimer() {
-      if (!timerStartTime) return;
-      
-      const elapsed = (Date.now() - timerStartTime) / 1000;
-      document.getElementById('timerDisplay').textContent = elapsed.toFixed(1);
-    }
-    
-    function getCurrentTime() {
-        if (currentInputMethod === 'timer') {
-            const timeValue = parseFloat(document.getElementById('timerDisplay').textContent);
-            return isNaN(timeValue) || timeValue === 0.0 ? null : timeValue;
-        } else {
-            const timeValue = parseFloat(document.getElementById('timeInput').value);
-            return isNaN(timeValue) ? null : timeValue;
-        }
-    }
-
-    function getLocation() {
-        if (!navigator.geolocation) {
-            showLocationError('Jūsų naršyklė nepalaiko geografinės vietos nustatymo funkcijos.');
-            return;
-        }
-
-        const locationBtn = document.getElementById('locationBtn');
-        const locationLoader = document.getElementById('locationLoader');
-        const locationBtnText = document.getElementById('locationBtnText');
-
-        locationBtn.classList.add('loading');
-        locationLoader.style.display = 'block';
-        locationBtnText.textContent = 'Ieškoma...';
-        locationBtn.disabled = true;
-        hideLocationError();
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                userLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                
-                locationBtn.classList.remove('loading');
-                locationBtn.classList.add('success');
-                locationLoader.style.display = 'none';
-                locationBtnText.innerHTML = `✓ Lokacija nustatyta`;
-                setTimeout(() => { locationBtn.disabled = false; }, 1000);
-            },
-            (error) => {
-                locationBtn.classList.remove('loading');
-                locationLoader.style.display = 'none';
-                locationBtnText.textContent = '📍 Nustatyti mano lokaciją';
-                locationBtn.disabled = false;
-                userLocation = null;
-                
-                let message = 'Nepavyko nustatyti jūsų buvimo vietos. ';
-                switch(error.code) {
-                    case error.PERMISSION_DENIED: message += "Leidimas nebuvo suteiktas."; break;
-                    case error.POSITION_UNAVAILABLE: message += "Informacija apie vietą yra nepasiekiama."; break;
-                    case error.TIMEOUT: message += "Operacija užtruko per ilgai."; break;
-                    default: message += "Įvyko nežinoma klaida."; break;
-                }
-                showLocationError(message);
-            }
-        );
-    }
-
-    function showLocationError(message) {
-        const errorDiv = document.getElementById('locationError');
-        errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
-    }
-
-    function hideLocationError() {
-        document.getElementById('locationError').style.display = 'none';
-    }
-
-    function calculateDistance() {
-      const time = getCurrentTime();
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- Element Caching ---
+      const timeInput = document.getElementById('timeInput');
       const tempInput = document.getElementById('tempInput');
-      const temperature = parseFloat(tempInput.value) || 20;
-      
-      showLoading(true);
-      
-      setTimeout(() => {
-        showLoading(false);
+      const locationBtn = document.getElementById('locationBtn');
+      const locationLoader = document.getElementById('locationLoader');
+      const locationBtnText = document.getElementById('locationBtnText');
+      const calculateBtn = document.querySelector('.calculate-btn');
+      const calculateLoader = document.getElementById('calculateLoader');
+      const calculateBtnText = document.getElementById('calculateBtnText');
+      const locationError = document.getElementById('locationError');
+      const resultSection = document.getElementById('resultSection');
+      const mainResult = document.getElementById('mainResult');
+      const detailsResult = document.getElementById('detailsResult');
+      const soundSpeedEl = document.getElementById('soundSpeed');
+      const dangerLevelEl = document.getElementById('dangerLevel');
+      const mapContainer = document.getElementById('map');
+      const historyList = document.getElementById('historyList');
+      const clearBtn = document.getElementById('clearBtn');
+      const helpBtn = document.querySelector('.help-btn');
+      const helpModal = document.getElementById('helpModal');
+      const closeHelpBtn = document.querySelector('.close-btn');
+      const manualInputSection = document.getElementById('manualInputSection');
+      const timerSection = document.getElementById('timerSection');
+      const timerDisplay = document.getElementById('timerDisplay');
+      const toggleTimerBtn = document.getElementById('toggleTimerBtn');
+      const resetTimerBtn = document.getElementById('resetTimerBtn');
+      const methodButtons = document.querySelectorAll('.method-btn');
+
+      // --- State Variables ---
+      let calculationHistory = [];
+      let userLocation = null;
+      let map = null;
+      let userMarker = null;
+      let lightningCircle = null;
+      let timerStartTime = null;
+      let timerInterval = null;
+      let currentInputMethod = 'manual';
+
+      // --- Initialization ---
+      function initialize() {
+        loadHistory();
+        updateHistoryDisplay();
+        setupEventListeners();
+        if (currentInputMethod === 'manual') {
+          timeInput.focus();
+        }
+      }
+
+      function setupEventListeners() {
+        methodButtons.forEach(btn => {
+          btn.addEventListener('click', () => switchInputMethod(btn.dataset.method));
+        });
         
-        if (time === null || time < 0) {
-          if (currentInputMethod === 'timer') {
-            showError('Pradėkite laiko matavimą paspaudę "Pradėti matavimą"!');
-          } else {
-            showError('Įveskite teisingą laiką (sekundėmis)!');
+        toggleTimerBtn.addEventListener('click', toggleTimer);
+        resetTimerBtn.addEventListener('click', resetTimer);
+        
+        locationBtn.addEventListener('click', getLocation);
+        calculateBtn.addEventListener('click', calculateDistance);
+        
+        clearBtn.addEventListener('click', clearHistory);
+        helpBtn.addEventListener('click', openHelpModal);
+        closeHelpBtn.addEventListener('click', closeHelpModal);
+        
+        helpModal.addEventListener('click', (e) => {
+          if (e.target === helpModal) {
+            closeHelpModal();
           }
-          document.getElementById('map').classList.remove('show');
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (helpModal.classList.contains('show')) {
+                if (e.key === 'Escape') closeHelpModal();
+                return;
+            }
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (currentInputMethod === 'manual') {
+                    calculateDistance();
+                } else { // timer mode
+                    toggleTimer();
+                }
+            }
+            
+            if (e.code === 'Space' && currentInputMethod === 'timer') {
+                e.preventDefault();
+                toggleTimer();
+            }
+            
+            if (e.key === 'Escape') {
+                closeHelpModal();
+            }
+        });
+      }
+
+      // --- Input Method ---
+      function switchInputMethod(method) {
+        currentInputMethod = method;
+        
+        methodButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.method === method);
+        });
+        
+        manualInputSection.classList.toggle('hide', method !== 'manual');
+        timerSection.classList.toggle('show', method === 'timer');
+        
+        if (method === 'manual') {
+          resetTimer();
+          timeInput.focus();
+        } else {
+          timeInput.value = '';
+        }
+      }
+
+      // --- Timer Logic ---
+      function toggleTimer() {
+        timerInterval ? stopTimer() : startTimer();
+      }
+      
+      function startTimer() {
+        if (timerInterval) return;
+        timerStartTime = Date.now();
+        toggleTimerBtn.classList.replace('start-timer-btn', 'stop-timer-btn');
+        toggleTimerBtn.innerHTML = '⏹️ Stabdyti matavimą';
+        timerInterval = setInterval(updateTimer, 100);
+      }
+      
+      function stopTimer() {
+        if (!timerInterval) return;
+        clearInterval(timerInterval);
+        const elapsed = (Date.now() - timerStartTime) / 1000;
+        timerDisplay.textContent = elapsed.toFixed(1);
+        timerInterval = null;
+        toggleTimerBtn.classList.replace('stop-timer-btn', 'start-timer-btn');
+        toggleTimerBtn.innerHTML = '▶️ Pradėti matavimą';
+        setTimeout(calculateDistance, 300); // Auto-calculate shortly after stopping
+      }
+      
+      function resetTimer() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        timerStartTime = null;
+        timerDisplay.textContent = '0.0';
+        if (toggleTimerBtn.classList.contains('stop-timer-btn')) {
+            toggleTimerBtn.classList.replace('stop-timer-btn', 'start-timer-btn');
+            toggleTimerBtn.innerHTML = '▶️ Pradėti matavimą';
+        }
+      }
+      
+      function updateTimer() {
+        if (!timerStartTime) return;
+        const elapsed = (Date.now() - timerStartTime) / 1000;
+        timerDisplay.textContent = elapsed.toFixed(1);
+      }
+      
+      function getCurrentTime() {
+        const timeStr = (currentInputMethod === 'timer') ? timerDisplay.textContent : timeInput.value;
+        const timeValue = parseFloat(timeStr);
+        return isNaN(timeValue) || timeValue <= 0 ? null : timeValue;
+      }
+
+      // --- Geolocation ---
+      function getLocation() {
+        if (!navigator.geolocation) {
+          showLocationError('Jūsų naršyklė nepalaiko geografinės vietos nustatymo funkcijos.');
           return;
         }
 
-        const soundSpeed = 331 + (0.6 * temperature);
-        const distance = (time * soundSpeed) / 1000;
-        const dangerLevel = getDangerLevel(distance);
-        
-        showResults(time, temperature, soundSpeed, distance, dangerLevel);
-        addToHistory(time, temperature, distance, dangerLevel);
-        
-        if (userLocation) {
-            displayMap(userLocation, distance);
-        } else {
-            document.getElementById('map').classList.remove('show');
-        }
+        setButtonLoading(locationBtn, locationLoader, locationBtnText, 'Ieškoma...', true);
+        hideLocationError();
 
-      }, 800);
-    }
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            userLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            setButtonLoading(locationBtn, locationLoader, null, '', false);
+            locationBtn.classList.add('success');
+            locationBtnText.innerHTML = `✓ Lokacija nustatyta`;
+            
+            setTimeout(() => {
+                locationBtn.classList.remove('success');
+                locationBtnText.innerHTML = '📍 Nustatyti mano lokaciją';
+            }, 2500);
+          },
+          (error) => {
+            userLocation = null;
+            setButtonLoading(locationBtn, locationLoader, locationBtnText, '📍 Nustatyti mano lokaciją', false);
+            let message = 'Nepavyko nustatyti jūsų buvimo vietos. ';
+            switch(error.code) {
+              case error.PERMISSION_DENIED: message += "Leidimas nebuvo suteiktas."; break;
+              case error.POSITION_UNAVAILABLE: message += "Informacija apie vietą yra nepasiekiama."; break;
+              case error.TIMEOUT: message += "Operacija užtruko per ilgai."; break;
+              default: message += "Įvyko nežinoma klaida."; break;
+            }
+            showLocationError(message);
+          }
+        );
+      }
 
-    function displayMap(location, distanceKm) {
-        const mapContainer = document.getElementById('map');
+      function showLocationError(message) {
+        locationError.textContent = message;
+        locationError.style.display = 'block';
+      }
+
+      function hideLocationError() {
+        locationError.style.display = 'none';
+      }
+
+      // --- Calculation ---
+      function calculateDistance() {
+        setButtonLoading(calculateBtn, calculateLoader, calculateBtnText, 'Skaičiuojama...', true);
+        
+        // The calculation is very fast, but a brief loading state gives user feedback
+        setTimeout(() => {
+            const time = getCurrentTime();
+            const temperature = parseFloat(tempInput.value) || 20;
+            
+            setButtonLoading(calculateBtn, calculateLoader, calculateBtnText, 'Skaičiuoti atstumą', false);
+
+            if (time === null) {
+              const message = currentInputMethod === 'timer' 
+                ? 'Pradėkite laiko matavimą arba įveskite laiką rankiniu būdu.' 
+                : 'Įveskite teisingą laiką (sekundėmis)!';
+              showError(message);
+              mapContainer.classList.remove('show');
+              return;
+            }
+
+            const soundSpeed = 331 + (0.6 * temperature);
+            const distance = (time * soundSpeed) / 1000;
+            const dangerLevel = getDangerLevel(distance);
+            
+            showResults(time, temperature, soundSpeed, distance, dangerLevel);
+            addToHistory(time, temperature, distance, dangerLevel);
+            
+            if (userLocation) {
+              displayMap(userLocation, distance);
+            } else {
+              mapContainer.classList.remove('show');
+            }
+        }, 150); // A very short delay for UX
+      }
+
+      // --- UI Updates ---
+      function setButtonLoading(btn, loader, btnText, text, isLoading) {
+          loader.style.display = isLoading ? 'block' : 'none';
+          if (btnText) btnText.textContent = text;
+          btn.disabled = isLoading;
+          btn.classList.toggle('loading', isLoading);
+      }
+
+      function displayMap(location, distanceKm) {
         mapContainer.classList.add('show');
         const distanceMeters = distanceKm * 1000;
 
         if (!map) {
-            map = L.map('map').setView([location.lat, location.lng], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
+          map = L.map('map').setView([location.lat, location.lng], 13);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          }).addTo(map);
         }
         
         if (userMarker) map.removeLayer(userMarker);
         if (lightningCircle) map.removeLayer(lightningCircle);
         
         userMarker = L.marker([location.lat, location.lng]).addTo(map)
-            .bindPopup('<b>Jūsų buvimo vieta</b>')
-            .openPopup();
+          .bindPopup('<b>Jūsų buvimo vieta</b>')
+          .openPopup();
         
         lightningCircle = L.circle([location.lat, location.lng], {
-            color: '#e53e3e',
-            fillColor: '#fed7d7',
-            fillOpacity: 0.4,
-            radius: distanceMeters
+          color: '#e53e3e',
+          fillColor: '#fed7d7',
+          fillOpacity: 0.4,
+          radius: distanceMeters
         }).addTo(map).bindPopup(`Galima žaibo zona<br>(${distanceKm.toFixed(2)} km spinduliu)`);
 
         map.fitBounds(lightningCircle.getBounds());
+        setTimeout(() => map.invalidateSize(), 100);
+      }
+
+      function showResults(time, temperature, soundSpeed, distance, dangerLevel) {
+        mainResult.textContent = `${distance.toFixed(2)} km`;
+        const methodText = currentInputMethod === 'timer' ? 'išmatuotu laiku' : 'įvestu laiku';
+        detailsResult.innerHTML = `
+          Žaibas trenkė <strong>${distance.toFixed(2)} km</strong> atstumu nuo jūsų.<br>
+          Skaičiavimas pagrįstas <strong>${temperature}°C</strong> temperatūra ir <strong>${time.toFixed(1)}s</strong> ${methodText}.
+        `;
+        soundSpeedEl.textContent = `${soundSpeed.toFixed(1)} m/s`;
+        dangerLevelEl.textContent = dangerLevel.text;
+        dangerLevelEl.style.color = dangerLevel.color;
+        resultSection.classList.add('show');
         
-        setTimeout(() => { map.invalidateSize() }, 100);
-    }
-
-    function showLoading(show) {
-      const loader = document.getElementById('calculateLoader');
-      const btnText = document.getElementById('calculateBtnText');
-      const btn = document.querySelector('.calculate-btn');
-      
-      if (show) {
-        loader.style.display = 'block';
-        btnText.textContent = 'Skaičiuojama...';
-        btn.disabled = true;
-      } else {
-        loader.style.display = 'none';
-        btnText.textContent = 'Skaičiuoti atstumą';
-        btn.disabled = false;
-      }
-    }
-
-    function showResults(time, temperature, soundSpeed, distance, dangerLevel) {
-      const resultSection = document.getElementById('resultSection');
-      const mainResult = document.getElementById('mainResult');
-      const detailsResult = document.getElementById('detailsResult');
-      const soundSpeedEl = document.getElementById('soundSpeed');
-      const dangerLevelEl = document.getElementById('dangerLevel');
-
-      mainResult.textContent = `${distance.toFixed(2)} km`;
-      
-      const methodText = currentInputMethod === 'timer' ? 'išmatuotu laiku' : 'įvestu laiku';
-      detailsResult.innerHTML = `
-        Žaibas trenkė <strong>${distance.toFixed(2)} km</strong> atstumu nuo jūsų.<br>
-        Skaičiavimas pagrįstas <strong>${temperature}°C</strong> temperatūra ir <strong>${time.toFixed(1)}s</strong> ${methodText}.
-      `;
-      
-      soundSpeedEl.textContent = `${soundSpeed.toFixed(1)} m/s`;
-      dangerLevelEl.textContent = dangerLevel.text;
-      dangerLevelEl.style.color = dangerLevel.color;
-
-      resultSection.classList.add('show');
-      
-      const existingError = document.querySelector('.error:not(#locationError)');
-      if (existingError) {
-        existingError.remove();
-      }
-    }
-
-    function showError(message) {
-      const existingError = document.querySelector('.error:not(#locationError)');
-      if (existingError) {
-        existingError.remove();
+        const existingError = document.querySelector('.error:not(#locationError)');
+        if (existingError) existingError.remove();
       }
 
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'error';
-      errorDiv.textContent = message;
-      
-      const buttonGroup = document.querySelector('.button-group');
-      buttonGroup.parentNode.insertBefore(errorDiv, buttonGroup.nextSibling);
-      
-      document.getElementById('resultSection').classList.remove('show');
-    }
+      function showError(message) {
+        const existingError = document.querySelector('.error:not(#locationError)');
+        if (existingError) existingError.remove();
 
-    function getDangerLevel(distance) {
-      if (distance < 1) return { text: 'YPAČ AUKŠTAS', color: '#e53e3e' };
-      if (distance < 5) return { text: 'AUKŠTAS', color: '#dd6b20' };
-      if (distance < 10) return { text: 'VIDUTINIS', color: '#d69e2e' };
-      return { text: 'ŽEMAS', color: '#38a169' };
-    }
-
-    function addToHistory(time, temperature, distance, dangerLevel) {
-      const timestamp = new Date().toLocaleString('lt-LT');
-      const method = currentInputMethod === 'timer' ? 'Išmatuota' : 'Įvesta';
-      const entry = { time, temperature, distance, dangerLevel, timestamp, method };
-      
-      calculationHistory.unshift(entry);
-      if (calculationHistory.length > 10) {
-        calculationHistory = calculationHistory.slice(0, 10);
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = message;
+        
+        calculateBtn.parentNode.insertBefore(errorDiv, calculateBtn.nextSibling);
+        resultSection.classList.remove('show');
       }
-      updateHistoryDisplay();
-    }
 
-    function updateHistoryDisplay() {
-      const historyList = document.getElementById('historyList');
-      const clearBtn = document.getElementById('clearBtn');
-      
-      if (calculationHistory.length === 0) {
-        historyList.innerHTML = '<p style="text-align: center; color: #a0aec0; padding: 20px;">Skaičiavimų istorija bus rodoma čia</p>';
-        clearBtn.style.display = 'none';
-        return;
+      function getDangerLevel(distance) {
+        if (distance < 1) return { text: 'YPAČ AUKŠTAS', color: '#e53e3e' };
+        if (distance < 5) return { text: 'AUKŠTAS', color: '#dd6b20' };
+        if (distance < 10) return { text: 'VIDUTINIS', color: '#d69e2e' };
+        return { text: 'ŽEMAS', color: '#38a169' };
       }
-      
-      historyList.innerHTML = calculationHistory.map(entry => `
-        <div class="history-item">
-          <div>
-            <strong>${entry.distance.toFixed(2)} km</strong> - ${entry.dangerLevel.text}<br>
-            <small>${entry.time.toFixed(1)}s (${entry.method}), ${entry.temperature}°C</small>
+
+      // --- History ---
+      function loadHistory() {
+        try {
+            const savedHistory = localStorage.getItem('lightningCalcHistory');
+            if (savedHistory) {
+              calculationHistory = JSON.parse(savedHistory);
+            }
+        } catch (e) {
+            console.error("Failed to load history from localStorage", e);
+            calculationHistory = [];
+        }
+      }
+
+      function saveHistory() {
+        try {
+            localStorage.setItem('lightningCalcHistory', JSON.stringify(calculationHistory));
+        } catch (e) {
+            console.error("Failed to save history to localStorage", e);
+        }
+      }
+
+      function addToHistory(time, temperature, distance, dangerLevel) {
+        const timestamp = new Date().toLocaleString('lt-LT');
+        const method = currentInputMethod === 'timer' ? 'Išmatuota' : 'Įvesta';
+        const entry = { time, temperature, distance, dangerLevel, timestamp, method };
+        
+        calculationHistory.unshift(entry);
+        if (calculationHistory.length > 10) {
+          calculationHistory.pop();
+        }
+        saveHistory();
+        updateHistoryDisplay();
+      }
+
+      function updateHistoryDisplay() {
+        if (calculationHistory.length === 0) {
+          historyList.innerHTML = '<p style="text-align: center; color: #a0aec0; padding: 20px;">Skaičiavimų istorija tuščia</p>';
+          clearBtn.style.display = 'none';
+          return;
+        }
+        
+        historyList.innerHTML = calculationHistory.map(entry => `
+          <div class="history-item">
+            <div>
+              <strong>${entry.distance.toFixed(2)} km</strong> - ${entry.dangerLevel.text}<br>
+              <small>${entry.time.toFixed(1)}s (${entry.method}), ${entry.temperature}°C</small>
+            </div>
+            <small>${entry.timestamp}</small>
           </div>
-          <small>${entry.timestamp}</small>
-        </div>
-      `).join('');
-      
-      clearBtn.style.display = 'block';
-    }
-
-    function clearHistory() {
-      calculationHistory = [];
-      updateHistoryDisplay();
-      
-      document.getElementById('resultSection').classList.remove('show');
-      
-      document.getElementById('timeInput').value = '';
-      document.getElementById('tempInput').value = '';
-      
-      const existingError = document.querySelector('.error:not(#locationError)');
-      if (existingError) {
-        existingError.remove();
+        `).join('');
+        
+        clearBtn.style.display = 'block';
       }
-      hideLocationError();
-      
-      resetTimer();
-      
-      if (currentInputMethod === 'manual') {
-        document.getElementById('timeInput').focus();
-      }
-    }
 
-    function openHelpModal() {
+      function clearHistory() {
+        calculationHistory = [];
+        saveHistory();
+        updateHistoryDisplay();
+        resultSection.classList.remove('show');
+        timeInput.value = '';
+        tempInput.value = '';
+        const existingError = document.querySelector('.error:not(#locationError)');
+        if (existingError) existingError.remove();
+        hideLocationError();
+        resetTimer();
+        if (currentInputMethod === 'manual') {
+          timeInput.focus();
+        }
+      }
+
+      // --- Modal ---
+      function openHelpModal() {
         helpModal.classList.add('show');
         document.body.classList.add('modal-open');
-    }
+      }
 
-    function closeHelpModal() {
+      function closeHelpModal() {
         helpModal.classList.remove('show');
         document.body.classList.remove('modal-open');
-    }
-    
-    helpModal.addEventListener('click', function(e) {
-        if (e.target === helpModal) {
-            closeHelpModal();
-        }
-    });
-
-    document.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter' && !helpModal.classList.contains('show')) {
-        if (currentInputMethod === 'timer') {
-          toggleTimer();
-        } else {
-          calculateDistance();
-        }
       }
-    });
-    
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && helpModal.classList.contains('show')) {
-            closeHelpModal();
-        }
-        
-        // Space bar shortcuts for timer
-        if (e.code === 'Space' && currentInputMethod === 'timer' && !helpModal.classList.contains('show')) {
-          e.preventDefault();
-          toggleTimer();
-        }
-    });
 
-    // Focus on appropriate input based on method
-    if (currentInputMethod === 'manual') {
-      document.getElementById('timeInput').focus();
-    }
+      // --- Start the app ---
+      initialize();
+    });
   </script>
 </body>
 </html>
