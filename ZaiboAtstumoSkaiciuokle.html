@@ -45,32 +45,6 @@
     @keyframes flash { 0%, 50%, 100% { opacity: 1; } 25%, 75% { opacity: 0.3; } }
     .subtitle { text-align: center; color: #718096; margin-bottom: 30px; font-size: 1.1em; }
     
-    .input-method-selector {
-      display: flex;
-      background: #f7fafc;
-      border-radius: 12px;
-      padding: 5px;
-      margin-bottom: 25px;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .method-btn {
-      flex: 1;
-      padding: 12px 16px;
-      border: none;
-      background: transparent;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      color: #718096;
-      font-size: 0.95em;
-    }
-    .method-btn.active {
-      background: white;
-      color: #667eea;
-      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
-    }
-    
     .input-group { margin-bottom: 25px; }
     .input-group label { display: block; color: #4a5568; font-weight: 600; margin-bottom: 8px; font-size: 0.95em; }
     .input-container { position: relative; }
@@ -84,7 +58,6 @@
     .unit { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #a0aec0; font-weight: 500; pointer-events: none; }
     
     .timer-section {
-      display: none;
       background: linear-gradient(135deg, #f7fafc, #edf2f7);
       border-radius: 12px;
       padding: 25px;
@@ -92,7 +65,6 @@
       text-align: center;
       border: 2px solid #e2e8f0;
     }
-    .timer-section.show { display: block; }
     
     .timer-display {
       font-size: 3em;
@@ -155,11 +127,6 @@
       border-radius: 8px;
       border-left: 4px solid #667eea;
     }
-    
-    .manual-input-section {
-      display: block;
-    }
-    .manual-input-section.hide { display: none; }
     
     .button-group {
       display: grid;
@@ -245,12 +212,7 @@
   <div class="container">
     <div class="calculator-card">
       <h1><span class="lightning-icon">⚡</span>Žaibo Atstumo Skaičiuoklė</h1>
-      <p class="subtitle">Apskaičiuokite atstumą ir pamatykite galimą žaibo vietą žemėlapyje</p>
-      
-      <div class="input-method-selector">
-        <button class="method-btn active" data-method="manual">✏️ Rankinė įvestis</button>
-        <button class="method-btn" data-method="timer">⏱️ Laiko matavimas</button>
-      </div>
+      <p class="subtitle">Pamatuokite laiką tarp žaibo ir griaustinio, kad apskaičiuotumėte atstumą</p>
       
       <div class="timer-section" id="timerSection">
         <div class="timer-instructions">
@@ -263,16 +225,6 @@
         <div>
           <button class="timer-btn start-timer-btn" id="toggleTimerBtn">▶️ Pradėti matavimą</button>
           <button class="timer-btn reset-timer-btn" id="resetTimerBtn">🔄 Iš naujo</button>
-        </div>
-      </div>
-      
-      <div class="manual-input-section" id="manualInputSection">
-        <div class="input-group">
-          <label for="timeInput">Laikas tarp blyksnio ir griaustinio</label>
-          <div class="input-container">
-            <input type="number" id="timeInput" placeholder="pvz.: 3" min="0" step="0.1" />
-            <span class="unit">sek</span>
-          </div>
         </div>
       </div>
 
@@ -404,7 +356,6 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // --- Element Caching ---
-      const timeInput = document.getElementById('timeInput');
       const tempInput = document.getElementById('tempInput');
       const locationBtn = document.getElementById('locationBtn');
       const locationLoader = document.getElementById('locationLoader');
@@ -424,12 +375,9 @@
       const helpBtn = document.querySelector('.help-btn');
       const helpModal = document.getElementById('helpModal');
       const closeHelpBtn = document.querySelector('.close-btn');
-      const manualInputSection = document.getElementById('manualInputSection');
-      const timerSection = document.getElementById('timerSection');
       const timerDisplay = document.getElementById('timerDisplay');
       const toggleTimerBtn = document.getElementById('toggleTimerBtn');
       const resetTimerBtn = document.getElementById('resetTimerBtn');
-      const methodButtons = document.querySelectorAll('.method-btn');
 
       // --- State Variables ---
       let calculationHistory = [];
@@ -439,23 +387,15 @@
       let lightningCircle = null;
       let timerStartTime = null;
       let timerInterval = null;
-      let currentInputMethod = 'manual';
 
       // --- Initialization ---
       function initialize() {
         loadHistory();
         updateHistoryDisplay();
         setupEventListeners();
-        if (currentInputMethod === 'manual') {
-          timeInput.focus();
-        }
       }
 
       function setupEventListeners() {
-        methodButtons.forEach(btn => {
-          btn.addEventListener('click', () => switchInputMethod(btn.dataset.method));
-        });
-        
         toggleTimerBtn.addEventListener('click', toggleTimer);
         resetTimerBtn.addEventListener('click', resetTimer);
         
@@ -478,16 +418,7 @@
                 return;
             }
 
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                if (currentInputMethod === 'manual') {
-                    calculateDistance();
-                } else { // timer mode
-                    toggleTimer();
-                }
-            }
-            
-            if (e.code === 'Space' && currentInputMethod === 'timer') {
+            if (e.key === 'Enter' || e.code === 'Space') {
                 e.preventDefault();
                 toggleTimer();
             }
@@ -496,25 +427,6 @@
                 closeHelpModal();
             }
         });
-      }
-
-      // --- Input Method ---
-      function switchInputMethod(method) {
-        currentInputMethod = method;
-        
-        methodButtons.forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.method === method);
-        });
-        
-        manualInputSection.classList.toggle('hide', method !== 'manual');
-        timerSection.classList.toggle('show', method === 'timer');
-        
-        if (method === 'manual') {
-          resetTimer();
-          timeInput.focus();
-        } else {
-          timeInput.value = '';
-        }
       }
 
       // --- Timer Logic ---
@@ -561,7 +473,7 @@
       }
       
       function getCurrentTime() {
-        const timeStr = (currentInputMethod === 'timer') ? timerDisplay.textContent : timeInput.value;
+        const timeStr = timerDisplay.textContent;
         const timeValue = parseFloat(timeStr);
         return isNaN(timeValue) || timeValue <= 0 ? null : timeValue;
       }
@@ -627,9 +539,7 @@
             setButtonLoading(calculateBtn, calculateLoader, calculateBtnText, 'Skaičiuoti atstumą', false);
 
             if (time === null) {
-              const message = currentInputMethod === 'timer' 
-                ? 'Pradėkite laiko matavimą arba įveskite laiką rankiniu būdu.' 
-                : 'Įveskite teisingą laiką (sekundėmis)!';
+              const message = 'Pradėkite laiko matavimą ir sustabdykite jį, kad gautumėte laiką.';
               showError(message);
               mapContainer.classList.remove('show');
               return;
@@ -689,7 +599,7 @@
 
       function showResults(time, temperature, soundSpeed, distance, dangerLevel) {
         mainResult.textContent = `${distance.toFixed(2)} km`;
-        const methodText = currentInputMethod === 'timer' ? 'išmatuotu laiku' : 'įvestu laiku';
+        const methodText = 'išmatuotu laiku';
         detailsResult.innerHTML = `
           Žaibas trenkė <strong>${distance.toFixed(2)} km</strong> atstumu nuo jūsų.<br>
           Skaičiavimas pagrįstas <strong>${temperature}°C</strong> temperatūra ir <strong>${time.toFixed(1)}s</strong> ${methodText}.
@@ -745,7 +655,7 @@
 
       function addToHistory(time, temperature, distance, dangerLevel) {
         const timestamp = new Date().toLocaleString('lt-LT');
-        const method = currentInputMethod === 'timer' ? 'Išmatuota' : 'Įvesta';
+        const method = 'Išmatuota';
         const entry = { time, temperature, distance, dangerLevel, timestamp, method };
         
         calculationHistory.unshift(entry);
@@ -781,15 +691,11 @@
         saveHistory();
         updateHistoryDisplay();
         resultSection.classList.remove('show');
-        timeInput.value = '';
         tempInput.value = '';
         const existingError = document.querySelector('.error:not(#locationError)');
         if (existingError) existingError.remove();
         hideLocationError();
         resetTimer();
-        if (currentInputMethod === 'manual') {
-          timeInput.focus();
-        }
       }
 
       // --- Modal ---
