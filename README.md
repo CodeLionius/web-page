@@ -17,9 +17,9 @@ Here are the calculators available:
 *   **Lightning Distance Calculator (Lithuanian):** Calculates the distance of a lightning strike based on the time between the flash and the thunder.
     *   Webpage: [ZaiboAtstumoSkaiciuokle.html](https://codelionius.github.io/web-page/ZaiboAtstumoSkaiciuokle.html) | Code: [ZaiboAtstumoSkaiciuokle.html](ZaiboAtstumoSkaiciuokle.html)
 *   **Automation Efficiency Calculator (English):** A simple efficiency automation calculator in English.
-    *   Webpage: [CALC_EN.html](https://codelionius.github.io/web-page/CALC_EN.html) | Code: [CALC_EN.html](CALC_EN.html)
+    *   Webpage: [CALC_EN.html](CALC_EN.html) | Code: [CALC_EN.html](CALC_EN.html)
 *   **Automation Efficiency Calculator (Lithuanian):** A simple efficiency automation calculator in Lithuanian.
-    *   Webpage: [CALC_LT.html](https://codelionius.github.io/web-page/CALC_LT.html) | Code: [CALC_LT.html](CALC_LT.html)
+    *   Webpage: [CALC_LT.html](CALC_LT.html) | Code: [CALC_LT.html](CALC_LT.html)
 
 ## Instructions
 
