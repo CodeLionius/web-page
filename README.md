@@ -20,7 +20,3 @@ Here are the calculators available:
 ## Instructions
 
 To use any of these calculators, simply click on the corresponding link above. This will open the calculator in your web browser.
-
-## Created by
-
-[Leoniux](https://github.com/CodeLionius) | [LinkedIn](https://www.linkedin.com/in/leonidas-rajeckas-b82288265/)
