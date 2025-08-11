@@ -23,4 +23,4 @@ To use any of these calculators, simply click on the corresponding link above. T
 
 ## Created by
 
-[Leoniux](https://github.com/CodeLionius)
+[Leoniux](https://github.com/CodeLionius) | [LinkedIn](https://www.linkedin.com/in/leonidas-rajeckas-b82288265/)
